@@ -1,5 +1,7 @@
 # Development plan — TopSpeech Health PWA assignment
 
+**Technical setup** (stack, scripts, folders, PWA, lint/format): see [README.md](./README.md).
+
 Step-by-step delivery roadmap for the engineer design assignment. Each item has a **task ID** used for **branch names** and merge discipline. This is a planning document, not a literal automated todo list.
 
 ---
@@ -37,7 +39,7 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 
 | ID | Name | Outcome | Branch name |
 |----|------|---------|--------------|
-| **TSH-001** | Scaffold & PWA baseline | Project scaffold (e.g. Vite + React + TS), baseline folders, lint/format if desired, dev/build scripts | `feature/TSH-001-scaffold-pwa` |
+| **TSH-001** | Scaffold & PWA baseline | Project scaffold (e.g. Vite ), baseline folders, lint/format if desired, dev/build scripts | `feature/TSH-001-scaffold-pwa` |
 | **TSH-002** | Lesson state machine | Start screen, sequential cards, end state; static lesson configuration driving the flow | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Card types & content | At least **two** exercise types and **four** cards total; static content module | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Feedback & transitions | Correct/incorrect feedback states; at least one animated transition between cards | `feature/TSH-004-feedback-transitions` |

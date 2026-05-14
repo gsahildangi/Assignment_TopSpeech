@@ -1,6 +1,6 @@
 /* 1) Tokens first so :root variables exist before Tailwind/@theme resolves. */
-@import "./styles/tokens.css";
-@import "tailwindcss";
+@import './styles/tokens.css';
+@import 'tailwindcss';
 
 /* 2) Map CSS variables into Tailwind utilities (bg-surface, rounded-card, …). */
 @theme {
@@ -18,7 +18,7 @@
 }
 
 /* 3) Motion after theme so utilities can combine with animation helpers. */
-@import "./styles/motion.css";
+@import './styles/motion.css';
 
 *,
 *::before,

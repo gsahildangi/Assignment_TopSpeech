@@ -1,4 +1,8 @@
 import { getChooseResult } from '../../../lib/chooseResult.js'
+import {
+  getCorrectCheer,
+  getIncorrectEncouragement,
+} from '../../../lib/feedbackCopy.js'
 import { ExerciseFeedback } from '../ExerciseFeedback.jsx'
 
 function optionButtonClass({ option, selectedId, correctId, answered }) {
@@ -57,13 +61,21 @@ export function ChooseExercise({ card, selectedId, onSelect }) {
       </ul>
 
       {answered && isCorrect && (
-        <ExerciseFeedback variant="correct" title="Correct!">
+        <ExerciseFeedback
+          variant="correct"
+          title="Correct!"
+          cheer={getCorrectCheer(card.id, selectedId)}
+        >
           “{selected.label}” uses the “{card.vowelHint}” vowel you practiced.
         </ExerciseFeedback>
       )}
 
       {answered && !isCorrect && (
-        <ExerciseFeedback variant="incorrect" title="Not quite.">
+        <ExerciseFeedback
+          variant="incorrect"
+          title="Keep going"
+          cheer={getIncorrectEncouragement(card.id, selectedId)}
+        >
           The answer is “{correct?.label}”.
           {selected ? ` “${selected.label}” uses a different vowel.` : ''}
         </ExerciseFeedback>

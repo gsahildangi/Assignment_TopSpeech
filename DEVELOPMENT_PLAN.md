@@ -13,9 +13,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-001** | Done | `feature/TSH-001-scaffold-pwa` |
 | **TSH-002** | Done | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Done | `feature/TSH-003-card-types-ui` |
-| **TSH-004** … **TSH-009** | Not started | See task table below |
+| **TSH-004** | Done | `feature/TSH-004-feedback-transitions` |
+| **TSH-005** … **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-004** — animated transitions between cards; extend feedback patterns if needed.
+**Next recommended task:** **TSH-005** — progress indicator through the lesson; streak or XP on the end screen.
 
 ---
 
@@ -66,12 +67,33 @@ Card types, static content, speech playback, and choose feedback. Full reference
 - **Choose correct/incorrect** — immediate visual + message feedback on tap; options lock until Continue.
 - **Web Speech “Play model”** — no bundled audio; `modelText` uses natural words for TTS.
 
-### Still for TSH-004+
+### Still for TSH-005+
 
-- Animated transition between cards (beyond `.ts-card-enter`).
 - Progress bar through lesson (TSH-005).
 - Streak / XP on end screen (TSH-005).
 - Recorded clinician audio (optional / innovation).
+
+---
+
+## TSH-004 implementation notes
+
+Feedback cheer/encouragement and card transitions. Full reference: [README § Feedback & card transitions](./README.md#feedback--card-transitions-tsh-004).
+
+| Piece | Location |
+|--------|----------|
+| Cheer / encouragement copy | `src/lib/feedbackCopy.js` — `getCorrectCheer`, `getIncorrectEncouragement` |
+| Feedback banner | `src/components/lesson/ExerciseFeedback.jsx` — pop animation, 🎉 / 💪 icons |
+| Choose wiring | `src/components/lesson/cards/ChooseExercise.jsx` — correct: “Correct!” + cheer; incorrect: “Keep going” + encouragement |
+| Card exit before advance | `src/components/lesson/CardScreen.jsx` — `isExiting` + `ts-card-exit`, then `onNext` |
+| Motion utilities | `src/styles/motion.css` — `ts-card-enter`, `ts-card-exit`, `ts-feedback-pop`, `ts-cheer-bounce` |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| Correct/incorrect feedback states | Choose card: option colors + `ExerciseFeedback` variants |
+| Animated transition between cards | Exit on Continue, enter on next card (`key={currentCard.id}`) |
+| Supportive tone on wrong answers | Encouragement lines; title **Keep going** (no dismissive copy) |
 
 ---
 
@@ -111,7 +133,7 @@ Card types, static content, speech playback, and choose feedback. Full reference
 | **TSH-001** | Scaffold & PWA baseline | Project scaffold (e.g. Vite ), baseline folders, lint/format if desired, dev/build scripts | `feature/TSH-001-scaffold-pwa` |
 | **TSH-002** | Lesson state machine | **Done.** Start screen, sequential cards, end state; `lessonConfig.js` + `lessonMachine.js` drive the flow | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Card types & content | **Done.** 3 types, 5 cards, static module, speech + choose feedback | `feature/TSH-003-card-types-ui` |
-| **TSH-004** | Feedback & transitions | Correct/incorrect feedback states; at least one animated transition between cards | `feature/TSH-004-feedback-transitions` |
+| **TSH-004** | Feedback & transitions | **Done.** Cheer / encouragement, feedback motion, card enter & exit on Continue | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Completion & rewards | Progress indicator through lesson; lesson-complete screen with streak or XP-style reward | `feature/TSH-005-completion-rewards` |
 | **TSH-006** | Responsive & a11y | Mobile-first layout; sensible tap targets; optional `prefers-reduced-motion` handling | `feature/TSH-006-responsive-a11y` |
 | **TSH-007** | PWA manifest & SW | Web app manifest, icons, service worker strategy so the app is installable | `feature/TSH-007-pwa-manifest-sw` |
@@ -138,7 +160,7 @@ Optional: open a pull request per task for review practice; for solo work, local
 |-------------------|------------|
 | ≥4 cards, ≥2 types | TSH-003 ✓ |
 | Choose feedback, play model | TSH-003 (early) |
-| Progress, animation between cards | TSH-004, TSH-005 |
+| Progress, animation between cards | TSH-004 ✓ (transitions), TSH-005 (progress bar) |
 | Completion / streak–XP | TSH-005 |
 | Responsive PWA | TSH-006, TSH-007 |
 | Innovation + short note | TSH-008 |

@@ -10,7 +10,7 @@ export function LessonProgress({ cardNumber, cardCount }) {
         <span className="text-sm font-semibold tabular-nums text-accent">{percent}%</span>
       </div>
       <div
-        className="h-2 overflow-hidden rounded-pill bg-accent-subtle"
+        className="h-2.5 overflow-hidden rounded-pill bg-accent-subtle sm:h-2"
         role="progressbar"
         aria-valuenow={percent}
         aria-valuemin={0}

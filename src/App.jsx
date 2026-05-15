@@ -2,9 +2,18 @@ import { LessonFlow } from './components/lesson/LessonFlow.jsx'
 
 function App() {
   return (
-    <main className="min-h-dvh bg-surface px-4 py-8 text-foreground">
-      <LessonFlow />
-    </main>
+    <>
+      <a className="ts-skip-link ts-focus-ring" href="#lesson-main">
+        Skip to lesson
+      </a>
+      <main
+        id="lesson-main"
+        className="ts-app-main bg-surface text-foreground"
+        tabIndex={-1}
+      >
+        <LessonFlow />
+      </main>
+    </>
   )
 }
 

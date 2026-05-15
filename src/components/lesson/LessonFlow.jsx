@@ -41,7 +41,7 @@ export function LessonFlow({ lesson = dailyLesson }) {
   }, [restart])
 
   return (
-    <div className="mx-auto flex w-full max-w-md flex-col gap-4">
+    <div className="ts-lesson-shell" role="region" aria-label="Daily lesson">
       {phase === LESSON_PHASE.START && (
         <StartScreen lesson={lesson} onStart={startLesson} />
       )}

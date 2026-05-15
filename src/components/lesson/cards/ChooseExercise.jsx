@@ -32,33 +32,32 @@ export function ChooseExercise({ card, selectedId, onSelect }) {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-foreground-muted">{card.prompt}</p>
-      <ul className="flex flex-col gap-2" role="listbox" aria-label="Word choices">
+      <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+        <legend className="sr-only">Word choices</legend>
         {card.options.map((option) => {
           const isSelected = selectedId === option.id
           return (
-            <li key={option.id} role="presentation">
-              <button
-                type="button"
-                role="option"
-                aria-selected={isSelected}
-                disabled={answered}
-                className={[
-                  'flex min-h-12 w-full items-center justify-center rounded-card border px-4 py-3 text-lg font-medium transition-colors disabled:cursor-default',
-                  optionButtonClass({
-                    option,
-                    selectedId,
-                    correctId: correct?.id,
-                    answered,
-                  }),
-                ].join(' ')}
-                onClick={() => onSelect(option.id)}
-              >
-                {option.label}
-              </button>
-            </li>
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={isSelected}
+              disabled={answered}
+              className={[
+                'ts-tap-target ts-focus-ring flex w-full items-center justify-center rounded-card border px-4 py-3 text-lg font-medium transition-colors disabled:cursor-default',
+                optionButtonClass({
+                  option,
+                  selectedId,
+                  correctId: correct?.id,
+                  answered,
+                }),
+              ].join(' ')}
+              onClick={() => onSelect(option.id)}
+            >
+              {option.label}
+            </button>
           )
         })}
-      </ul>
+      </fieldset>
 
       {answered && isCorrect && (
         <ExerciseFeedback

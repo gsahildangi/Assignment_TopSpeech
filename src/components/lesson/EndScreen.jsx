@@ -4,7 +4,7 @@ import { RewardStat } from './RewardStat.jsx'
 export function EndScreen({ completion, rewards, onRestart }) {
   return (
     <section
-      className="ts-card-enter flex flex-col gap-6 rounded-card bg-surface-elevated p-6 shadow-card"
+      className="ts-card-enter ts-lesson-card"
       aria-labelledby="lesson-end-title"
     >
       <div className="flex flex-col gap-2">

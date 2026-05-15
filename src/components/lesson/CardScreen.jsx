@@ -1,15 +1,17 @@
 import { useEffect, useState } from 'react'
 import { CARD_TYPE } from '../../data/cardTypes.js'
+import { useReducedMotion } from '../../hooks/useReducedMotion.js'
+import { getCardExitDelayMs } from '../../lib/motionPreference.js'
 import { CardExercise } from './cards/CardExercise.jsx'
 import { LessonButton } from './LessonButton.jsx'
-
-const CARD_EXIT_MS = 280
 
 export function CardScreen({ card, cardNumber, cardCount, onNext }) {
   const isLast = cardNumber === cardCount
   const isChoose = card.type === CARD_TYPE.CHOOSE
   const [chooseSelection, setChooseSelection] = useState(null)
   const [isExiting, setIsExiting] = useState(false)
+  const reducedMotion = useReducedMotion()
+  const cardExitMs = getCardExitDelayMs(reducedMotion)
 
   const canContinue = !isChoose || chooseSelection !== null
 
@@ -18,10 +20,10 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
 
     const timer = window.setTimeout(() => {
       onNext()
-    }, CARD_EXIT_MS)
+    }, cardExitMs)
 
     return () => window.clearTimeout(timer)
-  }, [isExiting, onNext])
+  }, [isExiting, onNext, cardExitMs])
 
   function handleContinue() {
     if (isExiting) return
@@ -31,7 +33,7 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
   return (
     <section
       className={[
-        'flex flex-col gap-6 rounded-card bg-surface-elevated p-6 shadow-card',
+        'ts-lesson-card',
         isExiting ? 'ts-card-exit' : 'ts-card-enter',
       ].join(' ')}
       aria-labelledby="lesson-card-title"

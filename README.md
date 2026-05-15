@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, and **animated card enter/exit transitions** are implemented (`TSH-003`, `TSH-004`). Progress bar and streak/XP are planned next (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, and **XP + streak rewards** on completion are implemented (`TSH-003`–`TSH-005`). Responsive polish and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -18,11 +18,12 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 8. [Speech model playback](#speech-model-playback)
 9. [Choose exercise feedback](#choose-exercise-feedback)
 10. [Feedback & card transitions (TSH-004)](#feedback--card-transitions-tsh-004)
-11. [Styling & design tokens](#styling--design-tokens)
-12. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-13. [Linting & formatting](#linting--formatting)
-14. [Roadmap & delivery](#roadmap--delivery)
-15. [Troubleshooting](#troubleshooting)
+11. [Completion & rewards (TSH-005)](#completion--rewards-tsh-005)
+12. [Styling & design tokens](#styling--design-tokens)
+13. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+14. [Linting & formatting](#linting--formatting)
+15. [Roadmap & delivery](#roadmap--delivery)
+16. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -54,7 +55,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`). You should see the **lesson start screen**; tap **Start lesson** to walk through **listen → repeat → listen → choose → repeat** cards, then **Practice again** to return to start.
+Open the URL Vite prints (usually `http://localhost:5173`). You should see the **lesson start screen**; tap **Start lesson** to walk through **listen → repeat → listen → choose → repeat** cards (watch the **progress bar** advance), then see **XP and streak** on the completion screen. Tap **Practice again** to return to start.
 
 Use **`npm run preview`** after a production build to verify the PWA and caching behavior against the real `dist/` output.
 
@@ -84,6 +85,7 @@ Assignment_TopSpeech/
 │   │   └── lesson/
 │   │       ├── cards/      # ListenExercise, RepeatExercise, ChooseExercise, CardExercise
 │   │       ├── LessonFlow.jsx, CardScreen.jsx, StartScreen.jsx, EndScreen.jsx
+│   │       ├── LessonProgress.jsx, RewardStat.jsx
 │   │       ├── LessonButton.jsx, PlayModelButton.jsx, ExerciseFeedback.jsx
 │   ├── data/
 │   │   ├── lessonConfig.js # Static `dailyLesson` — all copy and card payloads
@@ -94,7 +96,10 @@ Assignment_TopSpeech/
 │   │   ├── lessonMachine.js  # Pure reducer: start → card → end
 │   │   ├── speechModel.js    # Web Speech API helper for Play model
 │   │   ├── chooseResult.js   # Pure helper for choose-card answered state
-│   │   └── feedbackCopy.js   # Cheer / encouragement lines for choose feedback
+│   │   ├── feedbackCopy.js   # Cheer / encouragement lines for choose feedback
+│   │   ├── lessonProgress.js # Pure progress fraction for the lesson bar
+│   │   ├── lessonRewards.js  # XP + streak on lesson completion
+│   │   └── rewardsStore.js   # localStorage persistence for rewards
 │   ├── styles/
 │   │   ├── tokens.css
 │   │   └── motion.css
@@ -135,8 +140,13 @@ Reducer actions: `START_LESSON`, `NEXT`, `RESTART` — see `src/lib/lessonMachin
 | `src/lib/speechModel.js` | `speakModel`, `stopModelSpeech`, voice selection |
 | `src/lib/chooseResult.js` | `getChooseResult(card, selectedId)` for choose feedback |
 | `src/hooks/useLessonMachine.js` | React state + `startLesson` / `next` / `restart` |
-| `src/components/lesson/LessonFlow.jsx` | Phase orchestration |
+| `src/components/lesson/LessonFlow.jsx` | Phase orchestration, progress bar, reward grant on last card |
+| `src/components/lesson/LessonProgress.jsx` | Progress bar during `card` phase |
 | `src/components/lesson/CardScreen.jsx` | Card chrome, choose selection, exit transition before `NEXT` |
+| `src/components/lesson/EndScreen.jsx` | Completion copy + XP / streak reward tiles |
+| `src/lib/lessonProgress.js` | `getLessonProgress(cardNumber, cardCount)` |
+| `src/lib/lessonRewards.js` | `completeLessonRewards()` — XP and streak rules |
+| `src/lib/rewardsStore.js` | `loadRewards` / `saveRewards` via `localStorage` |
 | `src/components/lesson/ExerciseFeedback.jsx` | Correct/incorrect banner with cheer or encouragement |
 | `src/lib/feedbackCopy.js` | `getCorrectCheer`, `getIncorrectEncouragement` (stable per attempt) |
 | `src/components/lesson/cards/CardExercise.jsx` | Maps `card.type` → exercise component |
@@ -186,6 +196,7 @@ Five cards in order:
 | `cards` | array | Ordered exercise cards |
 | `completion.title` | string | End screen heading |
 | `completion.message` | string | End screen body |
+| `completion.xpReward` | number | XP granted when the lesson finishes (default `20` if omitted) |
 
 **Shared card fields**
 
@@ -361,11 +372,82 @@ Listen and repeat cards do not use `ExerciseFeedback` yet; only the choose type 
 
 ---
 
+## Completion & rewards (TSH-005)
+
+**Goal:** show learners how far they are through the lesson and celebrate completion with Duolingo-style **XP** and a **streak**, without a backend.
+
+### Key files
+
+| File | Responsibility |
+|------|----------------|
+| `src/lib/lessonProgress.js` | Pure `getLessonProgress(cardNumber, cardCount)` — fraction, percent, label |
+| `src/components/lesson/LessonProgress.jsx` | Bar + “Card X of Y” + `role="progressbar"` |
+| `src/lib/rewardsStore.js` | Read/write `{ streak, totalXp, lastPracticeDate }` in `localStorage` |
+| `src/lib/lessonRewards.js` | `completeLessonRewards({ xpReward })` — streak rules + XP grant |
+| `src/components/lesson/RewardStat.jsx` | Single reward tile (icon, label, value, detail) |
+| `src/components/lesson/EndScreen.jsx` | Completion message + two reward tiles |
+| `src/components/lesson/LessonFlow.jsx` | Renders `LessonProgress` in `card` phase; calls rewards on last **Continue** |
+| `src/styles/motion.css` | `ts-progress-fill` (bar width transition), `ts-reward-stat` (staggered pop-in) |
+
+### Progress bar
+
+- Rendered in **`LessonFlow`** above `CardScreen` (not inside the card), so it **does not remount** when `key={currentCard.id}` changes — the fill can animate smoothly between cards.
+- **Fill** = `cardNumber / cardCount` (1-based card number from `useLessonMachine`). Card 1 of 5 → 20%; card 5 of 5 → 100%.
+- Duplicate “Card X of Y” text was removed from `CardScreen`; the progress component owns that label.
+
+### Rewards flow
+
+1. User taps **Finish lesson** on the last card → `CardScreen` exit animation → `handleNext` in `LessonFlow`.
+2. If `cardIndex >= cardCount - 1`, **`completeLessonRewards()`** runs **before** `next()` dispatches to `end` (avoids double-award in React Strict Mode and keeps side effects out of `useEffect`).
+3. Result is stored in React state and passed to **`EndScreen`** as `rewards`.
+4. **Practice again** clears reward state and dispatches `RESTART`.
+
+### Streak rules
+
+Uses **local calendar days** (`YYYY-MM-DD` via `toPracticeDateKey()`):
+
+| `lastPracticeDate` vs today | Streak behavior |
+|----------------------------|-----------------|
+| Same day | Streak unchanged; XP still added |
+| Yesterday | Streak + 1 |
+| `null` (first ever) | Streak → 1 |
+| Older gap | Streak resets to 1 |
+
+**XP** is added on **every** lesson completion (`totalXp` accumulates). Streak copy is returned as `streakMessage` for the streak tile detail line.
+
+### Config
+
+In `lessonConfig.js`:
+
+```js
+completion: {
+  title: 'Lesson complete',
+  message: 'Nice work on today’s vowel warm-up. Your practice counts toward your streak.',
+  xpReward: 25,
+},
+```
+
+### Storage key
+
+`localStorage` key: **`topspeech_rewards`**. Clear site data in dev tools to reset streak/XP during testing.
+
+### Definitions
+
+| Term | Meaning |
+|------|---------|
+| **Lesson progress** | Position in `dailyLesson.cards`; UI percent = current 1-based card index ÷ total cards |
+| **XP** | Points per completion from `completion.xpReward`; persisted as `totalXp` |
+| **Streak** | Consecutive calendar days with at least one completed lesson |
+| **`lastPracticeDate`** | Date key of the most recent completion; drives streak increment vs reset |
+| **`completeLessonRewards()`** | Side-effecting helper: updates storage, returns snapshot for the end screen |
+
+---
+
 ## Styling & design tokens
 
 1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` (surface, foreground, accent, radius, shadow, motion duration/easing). Reduced motion is handled by shortening durations under `prefers-reduced-motion: reduce`.
 2. **`src/index.css`** imports tokens, then **`tailwindcss`**, then maps variables into Tailwind’s **`@theme`** block so utilities like `bg-surface`, `text-accent`, `rounded-card` stay aligned with tokens.
-3. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce) used alongside Tailwind classes.
+3. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce, progress bar fill, reward stat pop-in) used alongside Tailwind classes.
 
 **Why tokens first:** Tailwind v4’s `@theme` resolves against CSS variables; loading tokens before `@theme` keeps utilities and raw CSS in sync.
 
@@ -411,7 +493,8 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-002 | Done | Lesson state machine + static config |
 | TSH-003 | Done | 3 exercise types, 5 cards, speech playback, choose feedback |
 | TSH-004 | Done | Cheer / encouragement copy, feedback animations, card enter & exit transitions |
-| TSH-005 … TSH-009 | Planned | Progress bar, rewards, responsive polish, deploy |
+| TSH-005 | Done | Lesson progress bar, XP + streak on end screen, `localStorage` persistence |
+| TSH-006 … TSH-009 | Planned | Responsive polish, PWA polish, innovation, deploy |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
@@ -424,6 +507,8 @@ That document is the source of truth for phases and git workflow. This README fo
 | **Play model does nothing** | Use Chrome, Safari, or Edge (not all browsers support `speechSynthesis`). Ensure volume is up and the tab is not muted. Tap must come from a real click (required on iOS). |
 | **Play model sounds odd** | TTS quality varies by OS/voice. Set `modelText` to a natural word in `lessonConfig.js` (see [Speech model playback](#speech-model-playback)). |
 | **Choose card: no feedback** | You must tap an option first; feedback appears immediately, then **Continue**. Refresh if HMR left stale state. |
+| **Streak / XP look wrong** | Rewards live in `localStorage` (`topspeech_rewards`). Clear site data or use a private window to reset. Same-day replays add XP but do not increment streak again. |
+| **Progress bar stuck** | Bar only shows in the `card` phase. Finish the current card with **Continue**; fill updates when the next card mounts. |
 | **No `dist/sw.js` after build** | Ensure the build finished completely. The PWA plugin runs Workbox after the main bundle; a failed or interrupted build can omit the SW. Re-run `npm run build` and look for the **PWA v…** log lines. |
 | **Install prompt missing** | Use **HTTPS** (or `localhost`). Confirm **`manifest.webmanifest`** is linked (Vite plugin injects the link) and icon URLs return **200**. |
 | **Stale UI after deploy** | With `autoUpdate`, clients pick up a new SW after a navigation; hard refresh or closing tabs can help during testing. |

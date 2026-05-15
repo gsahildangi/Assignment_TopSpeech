@@ -69,6 +69,7 @@ export const dailyLesson = {
   ],
   completion: {
     title: 'Lesson complete',
-    message: 'Nice work on today’s vowel warm-up. Feedback and rewards come in the next tasks.',
+    message: 'Nice work on today’s vowel warm-up. Your practice counts toward your streak.',
+    xpReward: 25,
   },
 }

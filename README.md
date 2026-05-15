@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. Card exercise types, feedback, and rewards are planned in later tasks (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, and **choose-card correct/incorrect feedback** are implemented (`TSH-003` + early choose feedback). Progress bar, animated transitions, and streak/XP are planned next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -14,11 +14,14 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 4. [NPM scripts](#npm-scripts)
 5. [Project layout](#project-layout)
 6. [Lesson flow](#lesson-flow)
-7. [Styling & design tokens](#styling--design-tokens)
-8. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-9. [Linting & formatting](#linting--formatting)
-10. [Roadmap & delivery](#roadmap--delivery)
-11. [Troubleshooting](#troubleshooting)
+7. [Card types & static content (TSH-003)](#card-types--static-content-tsh-003)
+8. [Speech model playback](#speech-model-playback)
+9. [Choose exercise feedback](#choose-exercise-feedback)
+10. [Styling & design tokens](#styling--design-tokens)
+11. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+12. [Linting & formatting](#linting--formatting)
+13. [Roadmap & delivery](#roadmap--delivery)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -50,7 +53,7 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`). You should see the **lesson start screen**; tap **Start lesson** to walk through placeholder cards, then **Practice again** to return to start.
+Open the URL Vite prints (usually `http://localhost:5173`). You should see the **lesson start screen**; tap **Start lesson** to walk through **listen → repeat → listen → choose → repeat** cards, then **Practice again** to return to start.
 
 Use **`npm run preview`** after a production build to verify the PWA and caching behavior against the real `dist/` output.
 
@@ -75,29 +78,33 @@ Use **`npm run preview`** after a production build to verify the PWA and caching
 Assignment_TopSpeech/
 ├── public/                 # Static files copied as-is (favicon, PWA icons, …)
 ├── src/
-│   ├── assets/             # Images/audio/etc. imported from JS
+│   ├── assets/             # Images/audio/etc. imported from JS (future recorded models)
 │   ├── components/
-│   │   └── lesson/         # StartScreen, CardScreen, EndScreen, LessonFlow, LessonButton
+│   │   └── lesson/
+│   │       ├── cards/      # ListenExercise, RepeatExercise, ChooseExercise, CardExercise
+│   │       ├── LessonFlow.jsx, CardScreen.jsx, StartScreen.jsx, EndScreen.jsx
+│   │       ├── LessonButton.jsx, PlayModelButton.jsx, ExerciseFeedback.jsx
 │   ├── data/
-│   │   └── lessonConfig.js # Static `dailyLesson` — titles, cards[], completion copy
+│   │   ├── lessonConfig.js # Static `dailyLesson` — all copy and card payloads
+│   │   └── cardTypes.js    # CARD_TYPE constants (listen | repeat | choose)
 │   ├── hooks/
-│   │   └── useLessonMachine.js  # useReducer wrapper for lesson navigation
+│   │   └── useLessonMachine.js
 │   ├── lib/
-│   │   └── lessonMachine.js     # Pure reducer: start → card → end
+│   │   ├── lessonMachine.js  # Pure reducer: start → card → end
+│   │   ├── speechModel.js    # Web Speech API helper for Play model
+│   │   └── chooseResult.js   # Pure helper for choose-card answered state
 │   ├── styles/
-│   │   ├── tokens.css      # :root CSS variables (colors, radius, motion)
-│   │   └── motion.css      # Shared motion / animation helpers (e.g. .ts-card-enter)
-│   ├── App.jsx             # Root shell — renders `<LessonFlow />`
-│   ├── main.jsx            # Entry: React root + PWA `registerSW`
-│   ├── index.css           # Tailwind entry + @theme mapping + global base
-│   └── vite-env.d.ts       # Vite + vite-plugin-pwa client references
-├── index.html              # HTML shell; meta theme-color, title
-├── vite.config.js          # Vite + React + Tailwind + VitePWA
-├── eslint.config.js        # Flat ESLint + Prettier compatibility
-├── .prettierrc             # Prettier defaults
-├── .prettierignore         # Excludes build output, lockfile, markdown, …
-├── DEVELOPMENT_PLAN.md     # Task IDs (TSH-001 …), phases, git workflow
-└── README.md               # This file
+│   │   ├── tokens.css
+│   │   └── motion.css
+│   ├── App.jsx
+│   ├── main.jsx
+│   ├── index.css
+│   └── vite-env.d.ts
+├── index.html
+├── vite.config.js
+├── eslint.config.js
+├── DEVELOPMENT_PLAN.md
+└── README.md
 ```
 
 ---
@@ -120,19 +127,190 @@ Reducer actions: `START_LESSON`, `NEXT`, `RESTART` — see `src/lib/lessonMachin
 
 | File | Responsibility |
 |------|----------------|
-| `src/data/lessonConfig.js` | `dailyLesson`: `title`, `description`, `cards[]`, `completion` |
+| `src/data/lessonConfig.js` | `dailyLesson`: metadata, `cards[]`, `completion` |
+| `src/data/cardTypes.js` | `CARD_TYPE` enum used in config and UI routing |
 | `src/lib/lessonMachine.js` | `LESSON_PHASE`, `lessonReducer`, `getCurrentCard` |
+| `src/lib/speechModel.js` | `speakModel`, `stopModelSpeech`, voice selection |
+| `src/lib/chooseResult.js` | `getChooseResult(card, selectedId)` for choose feedback |
 | `src/hooks/useLessonMachine.js` | React state + `startLesson` / `next` / `restart` |
-| `src/components/lesson/LessonFlow.jsx` | Renders the screen for the current phase |
-| `src/components/lesson/*.jsx` | Presentational start / card / end UI |
+| `src/components/lesson/LessonFlow.jsx` | Phase orchestration |
+| `src/components/lesson/CardScreen.jsx` | Card chrome + choose selection state |
+| `src/components/lesson/cards/CardExercise.jsx` | Maps `card.type` → exercise component |
 
-### Extending the lesson
+### Extending navigation
 
-1. **Add or edit cards** in `lessonConfig.js` (`id`, `title`, `body` today; `type` and exercise fields in **TSH-003**).
-2. **Card count** is `lesson.cards.length` — the reducer uses it so the last **NEXT** transitions to `end` automatically.
-3. **New navigation** (e.g. skip, back): extend `lessonReducer` and expose actions from `useLessonMachine`; keep UI components thin.
+1. **Card count** is `lesson.cards.length` — the reducer uses it so the last **NEXT** transitions to `end` automatically.
+2. **New navigation** (skip, back): extend `lessonReducer` and expose actions from `useLessonMachine`; keep UI components thin.
 
-Placeholder card copy is intentional until **TSH-003** (exercise types), **TSH-004** (feedback/transitions), and **TSH-005** (progress bar / streak–XP on the end screen).
+---
+
+## Card types & static content (TSH-003)
+
+All lesson content lives in **`src/data/lessonConfig.js`**. Components do not hardcode card copy or counts.
+
+### Exercise types
+
+Defined in `src/data/cardTypes.js`:
+
+| Constant | Value | UI component | Purpose |
+|----------|-------|--------------|---------|
+| `CARD_TYPE.LISTEN` | `listen` | `ListenExercise` | Hear a model sound (display target + play) |
+| `CARD_TYPE.REPEAT` | `repeat` | `RepeatExercise` | Repeat syllable or phrase (display + optional play) |
+| `CARD_TYPE.CHOOSE` | `choose` | `ChooseExercise` | Multiple choice — pick the word that matches |
+
+`CardExercise.jsx` maps `card.type` to the correct component (**strategy pattern**). Unknown types render a fallback message.
+
+### Current lesson (`dailyLesson`)
+
+Five cards in order:
+
+1. **Listen** — vowel “ah” (plays example word `father`)
+2. **Repeat** — syllable `ma`
+3. **Listen** — vowel “ee” (plays `see`)
+4. **Choose** — which word uses “ee”? (`see` / `say` / `so`)
+5. **Repeat** — phrase `I see the sea`
+
+### Card config schema
+
+**Lesson root**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Lesson identifier |
+| `title` | string | Shown on start screen |
+| `description` | string | Subtitle on start screen |
+| `cards` | array | Ordered exercise cards |
+| `completion.title` | string | End screen heading |
+| `completion.message` | string | End screen body |
+
+**Shared card fields**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | string | yes | Stable key (used as React `key`) |
+| `type` | `listen` \| `repeat` \| `choose` | yes | Routes to exercise UI |
+| `title` | string | yes | Card heading |
+| `prompt` | string | yes | Instruction body |
+
+**Listen & repeat**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `target` | string | Large display text (glyph on screen) |
+| `modelText` | string | Spoken on **Play model** (defaults to `target`) |
+| `modelRate` | number | Speech rate (0.9 typical; optional) |
+| `phonetic` | string \| null | IPA hint under target |
+| `hint` | string | Listen-only footer tip |
+| `tip` | string | Repeat-only coaching tip |
+
+**Choose**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `vowelHint` | string | Used in correct-feedback copy |
+| `options` | array | `{ id, label, isCorrect }` — exactly one `isCorrect: true` |
+
+### Adding a new card
+
+```js
+// src/data/lessonConfig.js
+import { CARD_TYPE } from './cardTypes.js'
+
+// Inside dailyLesson.cards:
+{
+  id: 'card-listen-oh',
+  type: CARD_TYPE.LISTEN,
+  title: 'Listen: “Oh”',
+  prompt: 'Round your lips slightly.',
+  target: 'oh',
+  modelText: 'go',      // natural word for TTS
+  modelRate: 0.9,
+  phonetic: '/oʊ/',
+  hint: 'As in “go”.',
+}
+```
+
+No reducer changes needed unless you add new navigation rules.
+
+### Adding a new exercise type
+
+1. Add constant in `cardTypes.js`.
+2. Create `src/components/lesson/cards/MyExercise.jsx`.
+3. Register in `CardExercise.jsx` `EXERCISE_BY_TYPE` map.
+4. Add cards with the new `type` in `lessonConfig.js`.
+
+---
+
+## Speech model playback
+
+**File:** `src/lib/speechModel.js`  
+**UI:** `PlayModelButton.jsx` (used by listen and repeat cards)
+
+### Why Web Speech API?
+
+There are no bundled `.mp3` assets yet. The browser’s **`speechSynthesis`** speaks `modelText` on tap without a server or extra dependencies. Good for prototyping; production speech therapy apps often swap in **recorded clinician audio** per card.
+
+### Behavior
+
+| Function | Role |
+|----------|------|
+| `isSpeechModelSupported()` | Feature detect |
+| `speakModel(text, { rate, pitch })` | Cancel prior utterance, speak text, return a Promise |
+| `stopModelSpeech()` | Cancel on unmount |
+
+**Important:** `speechSynthesis.speak()` runs **synchronously in the click handler** (no `await` before `speak`). Mobile Safari can block playback if speech starts outside the user gesture.
+
+### Voice selection
+
+`pickEnglishVoice()` prefers high-quality system voices when available (e.g. Samantha, Google US English, Microsoft Aria). Falls back to any `en-US` / `en` voice.
+
+### Natural pronunciation
+
+Isolated vowels (`"ah"`, `"ee"`) often sound robotic. Config uses **`modelText`** with real words:
+
+| Display (`target`) | Spoken (`modelText`) |
+|--------------------|----------------------|
+| `ah` | `father` |
+| `ee` | `see` |
+| `ma` | `ma` |
+| `I see the sea` | full phrase |
+
+Listen cards show **“Play example: father”** when `modelText !== target`.
+
+### Replacing with real audio (later)
+
+```js
+// Future pattern in PlayModelButton or a dedicated hook:
+const audio = new Audio(`/audio/${card.id}.mp3`)
+await audio.play()
+```
+
+Keep `modelText` / `audioUrl` in config so content stays data-driven.
+
+---
+
+## Choose exercise feedback
+
+**Files:** `ChooseExercise.jsx`, `ExerciseFeedback.jsx`, `chooseResult.js`  
+**State:** `CardScreen` holds `chooseSelection`; options lock after first tap.
+
+### Flow
+
+1. User taps an option → `onSelect(optionId)`.
+2. `getChooseResult(card, selectedId)` returns `{ answered, isCorrect, selected, correct }`.
+3. UI updates:
+   - **Correct pick:** green styling + “Correct!” banner (`role="status"`, `aria-live="polite"`).
+   - **Wrong pick:** red on selection, **green on the correct option**, “Not quite.” banner with the right answer.
+4. All option buttons `disabled` until **Continue**.
+5. Continue enabled only after a selection (`CardScreen`).
+
+### Styling tokens
+
+Uses Tailwind utilities mapped from tokens: `text-success`, `bg-success/10`, `text-danger`, `border-danger`, etc. (see `tokens.css`).
+
+### Scope vs TSH-004
+
+Choose cards have **immediate** correct/incorrect feedback. **TSH-004** will add animated transitions between cards and may extend feedback to other types or post-Continue states.
 
 ---
 
@@ -183,8 +361,9 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | ID | Status | Notes |
 |----|--------|--------|
 | TSH-001 | Done | Scaffold, tokens, PWA baseline |
-| TSH-002 | Done | Lesson state machine + static config (this section) |
-| TSH-003 … TSH-009 | Planned | Card types, feedback, rewards, a11y polish, deploy |
+| TSH-002 | Done | Lesson state machine + static config |
+| TSH-003 | Done | 3 exercise types, 5 cards, speech playback, choose feedback |
+| TSH-004 … TSH-009 | Planned | Card transitions, progress bar, rewards, deploy |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
@@ -194,6 +373,9 @@ That document is the source of truth for phases and git workflow. This README fo
 
 | Symptom | What to check |
 |---------|----------------|
+| **Play model does nothing** | Use Chrome, Safari, or Edge (not all browsers support `speechSynthesis`). Ensure volume is up and the tab is not muted. Tap must come from a real click (required on iOS). |
+| **Play model sounds odd** | TTS quality varies by OS/voice. Set `modelText` to a natural word in `lessonConfig.js` (see [Speech model playback](#speech-model-playback)). |
+| **Choose card: no feedback** | You must tap an option first; feedback appears immediately, then **Continue**. Refresh if HMR left stale state. |
 | **No `dist/sw.js` after build** | Ensure the build finished completely. The PWA plugin runs Workbox after the main bundle; a failed or interrupted build can omit the SW. Re-run `npm run build` and look for the **PWA v…** log lines. |
 | **Install prompt missing** | Use **HTTPS** (or `localhost`). Confirm **`manifest.webmanifest`** is linked (Vite plugin injects the link) and icon URLs return **200**. |
 | **Stale UI after deploy** | With `autoUpdate`, clients pick up a new SW after a navigation; hard refresh or closing tabs can help during testing. |

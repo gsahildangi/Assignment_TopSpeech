@@ -17,7 +17,10 @@
   --shadow-card: var(--ts-shadow-card);
 }
 
-/* 3) Motion after theme so utilities can combine with animation helpers. */
+/* 3) Layout utilities (shell, tap targets, safe areas). */
+@import './styles/layout.css';
+
+/* 4) Motion after theme so utilities can combine with animation helpers. */
 @import './styles/motion.css';
 
 *,
@@ -29,6 +32,8 @@
 body {
   margin: 0;
   font-family: system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 #root {

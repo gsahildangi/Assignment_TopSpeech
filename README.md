@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, and **XP + streak rewards** on completion are implemented (`TSH-003`–`TSH-005`). Responsive polish and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), and **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`) are implemented. PWA polish, innovation, and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -19,11 +19,12 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 9. [Choose exercise feedback](#choose-exercise-feedback)
 10. [Feedback & card transitions (TSH-004)](#feedback--card-transitions-tsh-004)
 11. [Completion & rewards (TSH-005)](#completion--rewards-tsh-005)
-12. [Styling & design tokens](#styling--design-tokens)
-13. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-14. [Linting & formatting](#linting--formatting)
-15. [Roadmap & delivery](#roadmap--delivery)
-16. [Troubleshooting](#troubleshooting)
+12. [Responsive layout & accessibility (TSH-006)](#responsive-layout--accessibility-tsh-006)
+13. [Styling & design tokens](#styling--design-tokens)
+14. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+15. [Linting & formatting](#linting--formatting)
+16. [Roadmap & delivery](#roadmap--delivery)
+17. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -91,7 +92,8 @@ Assignment_TopSpeech/
 │   │   ├── lessonConfig.js # Static `dailyLesson` — all copy and card payloads
 │   │   └── cardTypes.js    # CARD_TYPE constants (listen | repeat | choose)
 │   ├── hooks/
-│   │   └── useLessonMachine.js
+│   │   ├── useLessonMachine.js
+│   │   └── useReducedMotion.js # OS prefers-reduced-motion for JS timers
 │   ├── lib/
 │   │   ├── lessonMachine.js  # Pure reducer: start → card → end
 │   │   ├── speechModel.js    # Web Speech API helper for Play model
@@ -99,9 +101,11 @@ Assignment_TopSpeech/
 │   │   ├── feedbackCopy.js   # Cheer / encouragement lines for choose feedback
 │   │   ├── lessonProgress.js # Pure progress fraction for the lesson bar
 │   │   ├── lessonRewards.js  # XP + streak on lesson completion
-│   │   └── rewardsStore.js   # localStorage persistence for rewards
+│   │   ├── rewardsStore.js   # localStorage persistence for rewards
+│   │   └── motionPreference.js # Card exit delay synced with reduced motion
 │   ├── styles/
 │   │   ├── tokens.css
+│   │   ├── layout.css        # Shell, safe areas, tap targets, focus ring
 │   │   └── motion.css
 │   ├── App.jsx
 │   ├── main.jsx
@@ -357,7 +361,7 @@ Copy is chosen with a small hash of `cardId` + `selectedId` so it does not chang
 3. Timer fires → `onNext()` → `lessonReducer` advances `cardIndex` or moves to `end`.
 4. `LessonFlow` remounts `CardScreen` with `key={currentCard.id}` → **`ts-card-enter`** on the next card.
 
-Reduced motion: `tokens.css` shortens `--ts-duration-*` under `prefers-reduced-motion: reduce`, so enter/exit and feedback pop become near-instant.
+Reduced motion: see [Responsive layout & accessibility (TSH-006)](#responsive-layout--accessibility-tsh-006) — durations shorten in `tokens.css`, animations disable in `motion.css`, and `CardScreen` skips the exit wait in JS.
 
 ### Definitions
 
@@ -443,11 +447,77 @@ completion: {
 
 ---
 
+## Responsive layout & accessibility (TSH-006)
+
+**Goal:** polish the lesson UI for phones and touch, keep controls easy to tap, respect **Reduce motion** OS settings, and improve baseline keyboard/screen-reader support.
+
+### Key files
+
+| File | Responsibility |
+|------|----------------|
+| `src/styles/layout.css` | `ts-app-main`, `ts-lesson-shell`, `ts-lesson-card`, `ts-tap-target`, `ts-focus-ring`, skip link |
+| `src/styles/motion.css` | `@media (prefers-reduced-motion: reduce)` — disables enter/exit, feedback pop, cheer bounce, reward stagger, progress transition |
+| `src/styles/tokens.css` | Shortens `--ts-duration-*` under reduced motion (fallback for anything still timed) |
+| `src/lib/motionPreference.js` | `getCardExitDelayMs()` — `0` vs `280ms` for card advance after exit |
+| `src/hooks/useReducedMotion.js` | Subscribes to `matchMedia('(prefers-reduced-motion: reduce)')` |
+| `src/App.jsx` | Skip link → `#lesson-main`; `ts-app-main` shell with safe-area padding |
+| `src/components/lesson/LessonFlow.jsx` | `ts-lesson-shell` + `role="region"` |
+| `src/components/lesson/LessonButton.jsx` | Primary actions — tap target + focus ring |
+| `src/components/lesson/PlayModelButton.jsx` | Full-width on mobile, min 44px height |
+| `src/components/lesson/cards/ChooseExercise.jsx` | `fieldset` / `legend`, `aria-pressed` on options |
+| `src/components/lesson/CardScreen.jsx` | `ts-lesson-card`; exit timer uses `getCardExitDelayMs()` |
+
+### Layout utilities
+
+| Class | Purpose |
+|-------|---------|
+| **`ts-app-main`** | Page shell: `min-height: 100dvh`, padding uses `max(gutter, env(safe-area-inset-*))` so content clears notches and home indicators |
+| **`ts-lesson-shell`** | Centered column (`max-width: 28rem`), vertical gap between progress + cards |
+| **`ts-lesson-card`** | Shared card surface (padding, radius, shadow) on start, card, and end screens |
+| **`ts-tap-target`** | `min-height: 44px` (WCAG 2.5.5 target size) + `touch-action: manipulation` |
+| **`ts-focus-ring`** | Visible `:focus-visible` outline (keyboard users) |
+| **`ts-skip-link`** | Off-screen until focused; jumps to `#lesson-main` |
+
+Base layout is **mobile-first**: default gutters/padding target small screens; `640px+` adds slightly more spacing.
+
+### Reduced motion (three layers)
+
+1. **CSS tokens** — `tokens.css` sets `--ts-duration-fast` and `--ts-duration-normal` to `1ms` when `prefers-reduced-motion: reduce`.
+2. **CSS animations** — `motion.css` sets `animation: none` on lesson motion classes and removes progress-bar width transition and reward stagger delay.
+3. **JavaScript timer** — `CardScreen` calls `onNext()` after `getCardExitDelayMs()` (`0` when reduced, else `280ms`) so the app does not wait on an invisible exit animation.
+
+**Test in Chrome DevTools:** Rendering → enable **Emulate CSS media feature `prefers-reduced-motion`**. Card changes should feel instant; cheer bounce and card slide should not run.
+
+### Accessibility choices
+
+| Area | Approach |
+|------|----------|
+| **Skip link** | First Tab stop: “Skip to lesson” → main landmark |
+| **Landmarks** | `<main id="lesson-main">`; lesson flow `role="region"` + `aria-label` |
+| **Choose options** | `fieldset` + visually hidden `legend` (not `listbox`/`option`, which imply arrow-key list semantics) |
+| **Choose selection** | `aria-pressed` on each option button |
+| **Progress** | Existing `role="progressbar"` + `aria-valuenow` (TSH-005); bar slightly taller on mobile |
+
+### Definitions
+
+| Term | Meaning |
+|------|---------|
+| **Mobile-first** | Default CSS targets small screens; wider breakpoints add polish, not fixes |
+| **Safe area** | Screen region not covered by notch, status bar, or home indicator (`env(safe-area-inset-*)`) |
+| **Tap target** | Minimum touchable area; here **44×44px** via `--ts-tap-min` |
+| **`prefers-reduced-motion`** | OS/media-query signal to reduce or skip motion (vestibular sensitivity) |
+| **a11y** | Accessibility — keyboard, screen readers, contrast, touch size, motion preferences |
+| **Focus ring** | Visible outline when navigating with Tab (`:focus-visible`) |
+| **`getCardExitDelayMs()`** | JS delay before `onNext` after card exit; `0` when reduced motion is on |
+
+---
+
 ## Styling & design tokens
 
-1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` (surface, foreground, accent, radius, shadow, motion duration/easing). Reduced motion is handled by shortening durations under `prefers-reduced-motion: reduce`.
-2. **`src/index.css`** imports tokens, then **`tailwindcss`**, then maps variables into Tailwind’s **`@theme`** block so utilities like `bg-surface`, `text-accent`, `rounded-card` stay aligned with tokens.
-3. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce, progress bar fill, reward stat pop-in) used alongside Tailwind classes.
+1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` (surface, foreground, accent, radius, shadow, motion duration/easing). Reduced motion shortens durations there; see [TSH-006](#responsive-layout--accessibility-tsh-006) for full motion handling.
+2. **`src/index.css`** imports tokens, then **`tailwindcss`**, then **`layout.css`**, then **`motion.css`**, and maps variables into Tailwind’s **`@theme`** block so utilities like `bg-surface`, `text-accent`, `rounded-card` stay aligned with tokens.
+3. **`src/styles/layout.css`** holds the lesson shell, safe-area padding, tap-target and focus-ring utilities (TSH-006).
+4. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce, progress bar fill, reward stat pop-in) used alongside Tailwind classes.
 
 **Why tokens first:** Tailwind v4’s `@theme` resolves against CSS variables; loading tokens before `@theme` keeps utilities and raw CSS in sync.
 
@@ -494,7 +564,8 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-003 | Done | 3 exercise types, 5 cards, speech playback, choose feedback |
 | TSH-004 | Done | Cheer / encouragement copy, feedback animations, card enter & exit transitions |
 | TSH-005 | Done | Lesson progress bar, XP + streak on end screen, `localStorage` persistence |
-| TSH-006 … TSH-009 | Planned | Responsive polish, PWA polish, innovation, deploy |
+| TSH-006 | Done | Mobile-first shell, 44px tap targets, focus rings, skip link, reduced motion (CSS + JS) |
+| TSH-007 … TSH-009 | Planned | PWA polish, innovation, deploy |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
@@ -512,6 +583,8 @@ That document is the source of truth for phases and git workflow. This README fo
 | **No `dist/sw.js` after build** | Ensure the build finished completely. The PWA plugin runs Workbox after the main bundle; a failed or interrupted build can omit the SW. Re-run `npm run build` and look for the **PWA v…** log lines. |
 | **Install prompt missing** | Use **HTTPS** (or `localhost`). Confirm **`manifest.webmanifest`** is linked (Vite plugin injects the link) and icon URLs return **200**. |
 | **Stale UI after deploy** | With `autoUpdate`, clients pick up a new SW after a navigation; hard refresh or closing tabs can help during testing. |
+| **Animations still playing** | Enable **prefers-reduced-motion** in OS settings or DevTools (Rendering). With emulation on, card exit should be instant and `motion.css` classes should not animate. |
+| **Skip link not visible** | It is off-screen until focused — press **Tab** once on load. |
 | **ESLint vs Prettier disagreements** | Keep **`eslint-config-prettier`** last in `eslint.config.js`. Run `npm run format` before `npm run lint` if needed. |
 
 ---

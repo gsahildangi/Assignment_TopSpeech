@@ -3,7 +3,7 @@ import { LessonButton } from './LessonButton.jsx'
 export function StartScreen({ lesson, onStart }) {
   return (
     <section
-      className="ts-card-enter flex flex-col gap-6 rounded-card bg-surface-elevated p-6 shadow-card"
+      className="ts-card-enter ts-lesson-card"
       aria-labelledby="lesson-start-title"
     >
       <div className="flex flex-col gap-2">

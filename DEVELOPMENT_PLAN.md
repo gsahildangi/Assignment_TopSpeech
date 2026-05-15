@@ -15,9 +15,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-003** | Done | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Done | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Done | `feature/TSH-005-completion-rewards` |
-| **TSH-006** … **TSH-009** | Not started | See task table below |
+| **TSH-006** | Done | `feature/TSH-006-responsive-a11y` |
+| **TSH-007** … **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-006** — mobile-first layout polish, tap targets, reduced-motion handling.
+**Next recommended task:** **TSH-007** — PWA manifest polish, icons, service worker installability.
 
 ---
 
@@ -128,6 +129,40 @@ Progress indicator and completion rewards. Full reference: [README § Completion
 
 ---
 
+## TSH-006 implementation notes
+
+Responsive layout and accessibility. Full reference: [README § Responsive layout & accessibility](./README.md#responsive-layout--accessibility-tsh-006).
+
+| Piece | Location |
+|--------|----------|
+| Layout utilities | `src/styles/layout.css` — shell, safe areas, tap targets, focus ring, skip link |
+| Motion disable (CSS) | `src/styles/motion.css` — `animation: none` + no progress transition under reduced motion |
+| Motion duration (tokens) | `src/styles/tokens.css` — `--ts-duration-*` → `1ms` under reduced motion |
+| Exit delay helper | `src/lib/motionPreference.js` — `getCardExitDelayMs()`, `CARD_EXIT_MS` |
+| Reduced-motion hook | `src/hooks/useReducedMotion.js` |
+| App shell | `src/App.jsx` — skip link, `ts-app-main`, `#lesson-main` |
+| Lesson column | `src/components/lesson/LessonFlow.jsx` — `ts-lesson-shell`, `role="region"` |
+| Card shell | `StartScreen`, `CardScreen`, `EndScreen` — `ts-lesson-card` |
+| Interactive targets | `LessonButton`, `PlayModelButton`, `ChooseExercise` — `ts-tap-target`, `ts-focus-ring` |
+| Choose semantics | `ChooseExercise.jsx` — `fieldset` / `legend`, `aria-pressed` |
+| Card exit timer | `CardScreen.jsx` — `getCardExitDelayMs(reducedMotion)` instead of hard-coded 280ms |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| Mobile-first layout | `layout.css` defaults for small screens; safe-area padding; centered `max-width` shell |
+| Sensible tap targets | `--ts-tap-min: 44px` on primary buttons, play model, choose options |
+| `prefers-reduced-motion` | Tokens shorten durations; `motion.css` disables animations; JS exit delay = 0 |
+
+### Design choices
+
+- **Layout in CSS utilities** (`ts-*`) keeps spacing/safe-area rules out of every component; screens only add motion/structure classes.
+- **JS exit delay matches CSS** so reduced-motion users are not blocked 280ms after tapping Continue.
+- **Choose uses `fieldset`**, not `listbox`, because options are independent buttons (not a single listbox widget with arrow-key navigation).
+
+---
+
 ## Legend
 
 | Pattern | Meaning |
@@ -166,7 +201,7 @@ Progress indicator and completion rewards. Full reference: [README § Completion
 | **TSH-003** | Card types & content | **Done.** 3 types, 5 cards, static module, speech + choose feedback | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Feedback & transitions | **Done.** Cheer / encouragement, feedback motion, card enter & exit on Continue | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Completion & rewards | **Done.** Progress bar, XP + streak on end screen, `localStorage` persistence | `feature/TSH-005-completion-rewards` |
-| **TSH-006** | Responsive & a11y | Mobile-first layout; sensible tap targets; optional `prefers-reduced-motion` handling | `feature/TSH-006-responsive-a11y` |
+| **TSH-006** | Responsive & a11y | **Done.** Mobile-first shell, 44px tap targets, focus rings, skip link, reduced motion (CSS + JS) | `feature/TSH-006-responsive-a11y` |
 | **TSH-007** | PWA manifest & SW | Web app manifest, icons, service worker strategy so the app is installable | `feature/TSH-007-pwa-manifest-sw` |
 | **TSH-008** | Innovation | One Duolingo-different interaction or mechanic; 2–4 sentence explanation in README | `feature/TSH-008-innovation` |
 | **TSH-009** | Deploy & submission polish | Deploy to Vercel/Netlify/GitHub Pages; fill README live URL; design walkthrough | `feature/TSH-009-deploy-docs` |
@@ -193,7 +228,7 @@ Optional: open a pull request per task for review practice; for solo work, local
 | Choose feedback, play model | TSH-003 (early) |
 | Progress, animation between cards | TSH-004 ✓ (transitions), TSH-005 ✓ (progress bar) |
 | Completion / streak–XP | TSH-005 ✓ |
-| Responsive PWA | TSH-006, TSH-007 |
+| Responsive PWA | TSH-006 ✓ (layout/a11y), TSH-007 (manifest/install) |
 | Innovation + short note | TSH-008 |
 | Live link + README | TSH-009 |
 

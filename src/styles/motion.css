@@ -93,3 +93,21 @@
 .ts-reward-stat:nth-child(2) {
   animation-delay: 80ms;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .ts-card-enter,
+  .ts-card-exit,
+  .ts-feedback-pop,
+  .ts-cheer-icon,
+  .ts-reward-stat {
+    animation: none !important;
+  }
+
+  .ts-progress-fill {
+    transition: none;
+  }
+
+  .ts-reward-stat:nth-child(2) {
+    animation-delay: 0;
+  }
+}

@@ -36,9 +36,6 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
       ].join(' ')}
       aria-labelledby="lesson-card-title"
     >
-      <p className="text-sm font-medium text-foreground-muted">
-        Card {cardNumber} of {cardCount}
-      </p>
       <div className="flex flex-col gap-4">
         <h2 id="lesson-card-title" className="text-xl font-semibold text-foreground">
           {card.title}

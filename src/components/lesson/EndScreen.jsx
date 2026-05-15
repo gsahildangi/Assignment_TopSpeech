@@ -1,6 +1,7 @@
 import { LessonButton } from './LessonButton.jsx'
+import { RewardStat } from './RewardStat.jsx'
 
-export function EndScreen({ completion, onRestart }) {
+export function EndScreen({ completion, rewards, onRestart }) {
   return (
     <section
       className="ts-card-enter flex flex-col gap-6 rounded-card bg-surface-elevated p-6 shadow-card"
@@ -15,6 +16,24 @@ export function EndScreen({ completion, onRestart }) {
         </h2>
         <p className="text-foreground-muted">{completion.message}</p>
       </div>
+
+      {rewards ? (
+        <div className="grid grid-cols-2 gap-3" aria-label="Lesson rewards">
+          <RewardStat
+            icon="⭐"
+            label="XP earned"
+            value={`+${rewards.xpEarned}`}
+            detail={`${rewards.totalXp} total`}
+          />
+          <RewardStat
+            icon="🔥"
+            label="Streak"
+            value={`${rewards.streak} day${rewards.streak === 1 ? '' : 's'}`}
+            detail={rewards.streakMessage}
+          />
+        </div>
+      ) : null}
+
       <LessonButton onClick={onRestart}>Practice again</LessonButton>
     </section>
   )

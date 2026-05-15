@@ -14,9 +14,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-002** | Done | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Done | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Done | `feature/TSH-004-feedback-transitions` |
-| **TSH-005** … **TSH-009** | Not started | See task table below |
+| **TSH-005** | Done | `feature/TSH-005-completion-rewards` |
+| **TSH-006** … **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-005** — progress indicator through the lesson; streak or XP on the end screen.
+**Next recommended task:** **TSH-006** — mobile-first layout polish, tap targets, reduced-motion handling.
 
 ---
 
@@ -67,10 +68,8 @@ Card types, static content, speech playback, and choose feedback. Full reference
 - **Choose correct/incorrect** — immediate visual + message feedback on tap; options lock until Continue.
 - **Web Speech “Play model”** — no bundled audio; `modelText` uses natural words for TTS.
 
-### Still for TSH-005+
+### Still for TSH-006+
 
-- Progress bar through lesson (TSH-005).
-- Streak / XP on end screen (TSH-005).
 - Recorded clinician audio (optional / innovation).
 
 ---
@@ -94,6 +93,38 @@ Feedback cheer/encouragement and card transitions. Full reference: [README § Fe
 | Correct/incorrect feedback states | Choose card: option colors + `ExerciseFeedback` variants |
 | Animated transition between cards | Exit on Continue, enter on next card (`key={currentCard.id}`) |
 | Supportive tone on wrong answers | Encouragement lines; title **Keep going** (no dismissive copy) |
+
+---
+
+## TSH-005 implementation notes
+
+Progress indicator and completion rewards. Full reference: [README § Completion & rewards](./README.md#completion--rewards-tsh-005).
+
+| Piece | Location |
+|--------|----------|
+| Progress math | `src/lib/lessonProgress.js` — `getLessonProgress()` |
+| Progress UI | `src/components/lesson/LessonProgress.jsx` — bar above cards in `LessonFlow` |
+| Reward persistence | `src/lib/rewardsStore.js` — `localStorage` key `topspeech_rewards` |
+| Reward logic | `src/lib/lessonRewards.js` — `completeLessonRewards()`, streak by calendar day |
+| Reward tiles | `src/components/lesson/RewardStat.jsx` |
+| End screen | `src/components/lesson/EndScreen.jsx` — XP + streak grid |
+| Orchestration | `src/components/lesson/LessonFlow.jsx` — `handleNext` grants rewards on last card |
+| Config | `src/data/lessonConfig.js` — `completion.xpReward` |
+| Motion | `src/styles/motion.css` — `ts-progress-fill`, `ts-reward-stat` |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| Progress indicator through lesson | `LessonProgress` during `card` phase; fill = `cardNumber / cardCount` |
+| Lesson-complete / streak–XP moment | `EndScreen` shows +XP earned, total XP, streak days, streak message |
+| No backend | Streak and `totalXp` in `localStorage` |
+
+### Design choices
+
+- Progress bar in **`LessonFlow`**, not `CardScreen`, so it survives card remounts and animates width between steps.
+- Rewards applied in **`handleNext`** when finishing the last card (not in `useEffect`) to avoid Strict Mode double-grant and satisfy `react-hooks/set-state-in-effect` lint.
+- **XP every completion**; **streak** updates at most once per calendar day.
 
 ---
 
@@ -134,7 +165,7 @@ Feedback cheer/encouragement and card transitions. Full reference: [README § Fe
 | **TSH-002** | Lesson state machine | **Done.** Start screen, sequential cards, end state; `lessonConfig.js` + `lessonMachine.js` drive the flow | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Card types & content | **Done.** 3 types, 5 cards, static module, speech + choose feedback | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Feedback & transitions | **Done.** Cheer / encouragement, feedback motion, card enter & exit on Continue | `feature/TSH-004-feedback-transitions` |
-| **TSH-005** | Completion & rewards | Progress indicator through lesson; lesson-complete screen with streak or XP-style reward | `feature/TSH-005-completion-rewards` |
+| **TSH-005** | Completion & rewards | **Done.** Progress bar, XP + streak on end screen, `localStorage` persistence | `feature/TSH-005-completion-rewards` |
 | **TSH-006** | Responsive & a11y | Mobile-first layout; sensible tap targets; optional `prefers-reduced-motion` handling | `feature/TSH-006-responsive-a11y` |
 | **TSH-007** | PWA manifest & SW | Web app manifest, icons, service worker strategy so the app is installable | `feature/TSH-007-pwa-manifest-sw` |
 | **TSH-008** | Innovation | One Duolingo-different interaction or mechanic; 2–4 sentence explanation in README | `feature/TSH-008-innovation` |
@@ -160,8 +191,8 @@ Optional: open a pull request per task for review practice; for solo work, local
 |-------------------|------------|
 | ≥4 cards, ≥2 types | TSH-003 ✓ |
 | Choose feedback, play model | TSH-003 (early) |
-| Progress, animation between cards | TSH-004 ✓ (transitions), TSH-005 (progress bar) |
-| Completion / streak–XP | TSH-005 |
+| Progress, animation between cards | TSH-004 ✓ (transitions), TSH-005 ✓ (progress bar) |
+| Completion / streak–XP | TSH-005 ✓ |
 | Responsive PWA | TSH-006, TSH-007 |
 | Innovation + short note | TSH-008 |
 | Live link + README | TSH-009 |

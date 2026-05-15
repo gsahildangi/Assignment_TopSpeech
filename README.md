@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, and **choose-card correct/incorrect feedback** are implemented (`TSH-003` + early choose feedback). Progress bar, animated transitions, and streak/XP are planned next (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, and **animated card enter/exit transitions** are implemented (`TSH-003`, `TSH-004`). Progress bar and streak/XP are planned next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -17,11 +17,12 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 7. [Card types & static content (TSH-003)](#card-types--static-content-tsh-003)
 8. [Speech model playback](#speech-model-playback)
 9. [Choose exercise feedback](#choose-exercise-feedback)
-10. [Styling & design tokens](#styling--design-tokens)
-11. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-12. [Linting & formatting](#linting--formatting)
-13. [Roadmap & delivery](#roadmap--delivery)
-14. [Troubleshooting](#troubleshooting)
+10. [Feedback & card transitions (TSH-004)](#feedback--card-transitions-tsh-004)
+11. [Styling & design tokens](#styling--design-tokens)
+12. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+13. [Linting & formatting](#linting--formatting)
+14. [Roadmap & delivery](#roadmap--delivery)
+15. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -92,7 +93,8 @@ Assignment_TopSpeech/
 │   ├── lib/
 │   │   ├── lessonMachine.js  # Pure reducer: start → card → end
 │   │   ├── speechModel.js    # Web Speech API helper for Play model
-│   │   └── chooseResult.js   # Pure helper for choose-card answered state
+│   │   ├── chooseResult.js   # Pure helper for choose-card answered state
+│   │   └── feedbackCopy.js   # Cheer / encouragement lines for choose feedback
 │   ├── styles/
 │   │   ├── tokens.css
 │   │   └── motion.css
@@ -134,7 +136,9 @@ Reducer actions: `START_LESSON`, `NEXT`, `RESTART` — see `src/lib/lessonMachin
 | `src/lib/chooseResult.js` | `getChooseResult(card, selectedId)` for choose feedback |
 | `src/hooks/useLessonMachine.js` | React state + `startLesson` / `next` / `restart` |
 | `src/components/lesson/LessonFlow.jsx` | Phase orchestration |
-| `src/components/lesson/CardScreen.jsx` | Card chrome + choose selection state |
+| `src/components/lesson/CardScreen.jsx` | Card chrome, choose selection, exit transition before `NEXT` |
+| `src/components/lesson/ExerciseFeedback.jsx` | Correct/incorrect banner with cheer or encouragement |
+| `src/lib/feedbackCopy.js` | `getCorrectCheer`, `getIncorrectEncouragement` (stable per attempt) |
 | `src/components/lesson/cards/CardExercise.jsx` | Maps `card.type` → exercise component |
 
 ### Extending navigation
@@ -300,7 +304,7 @@ Keep `modelText` / `audioUrl` in config so content stays data-driven.
 2. `getChooseResult(card, selectedId)` returns `{ answered, isCorrect, selected, correct }`.
 3. UI updates:
    - **Correct pick:** green styling + “Correct!” banner (`role="status"`, `aria-live="polite"`).
-   - **Wrong pick:** red on selection, **green on the correct option**, “Not quite.” banner with the right answer.
+   - **Wrong pick:** red on selection, **green on the correct option**, supportive banner (see [TSH-004](#feedback--card-transitions-tsh-004)).
 4. All option buttons `disabled` until **Continue**.
 5. Continue enabled only after a selection (`CardScreen`).
 
@@ -308,9 +312,52 @@ Keep `modelText` / `audioUrl` in config so content stays data-driven.
 
 Uses Tailwind utilities mapped from tokens: `text-success`, `bg-success/10`, `text-danger`, `border-danger`, etc. (see `tokens.css`).
 
-### Scope vs TSH-004
+---
 
-Choose cards have **immediate** correct/incorrect feedback. **TSH-004** will add animated transitions between cards and may extend feedback to other types or post-Continue states.
+## Feedback & card transitions (TSH-004)
+
+**Goal:** reinforce correct answers with cheer, keep learners motivated after a wrong pick, and animate movement between cards.
+
+### Key files
+
+| File | Responsibility |
+|------|----------------|
+| `src/lib/feedbackCopy.js` | Rotating **cheer** (correct) and **encouragement** (incorrect) lines; stable per `card.id` + selection |
+| `src/components/lesson/ExerciseFeedback.jsx` | Banner UI: icon, title, cheer line, detail copy; `ts-feedback-pop` animation |
+| `src/components/lesson/cards/ChooseExercise.jsx` | Wires feedback copy into choose results |
+| `src/components/lesson/CardScreen.jsx` | `ts-card-exit` on Continue, then calls `onNext` after motion duration |
+| `src/styles/motion.css` | `ts-card-enter`, `ts-card-exit`, `ts-feedback-pop`, `ts-cheer-icon` |
+
+### Choose feedback copy
+
+After a tap, `ExerciseFeedback` shows:
+
+| Outcome | Title | Second line (`cheer` prop) | Detail (`children`) |
+|---------|--------|----------------------------|---------------------|
+| Correct | **Correct!** 🎉 | Random cheer from `getCorrectCheer()` | Vowel explanation (e.g. which sound the word uses) |
+| Incorrect | **Keep going** 💪 | Random encouragement from `getIncorrectEncouragement()` | Correct answer + short contrast note |
+
+Copy is chosen with a small hash of `cardId` + `selectedId` so it does not change on re-render. Edit lines in `feedbackCopy.js` to tune tone.
+
+### Card transition flow
+
+1. User taps **Continue** (or **Finish lesson** on the last card).
+2. `CardScreen` sets `isExiting` → applies **`ts-card-exit`** (fade up, 280ms, matches `--ts-duration-normal`).
+3. Timer fires → `onNext()` → `lessonReducer` advances `cardIndex` or moves to `end`.
+4. `LessonFlow` remounts `CardScreen` with `key={currentCard.id}` → **`ts-card-enter`** on the next card.
+
+Reduced motion: `tokens.css` shortens `--ts-duration-*` under `prefers-reduced-motion: reduce`, so enter/exit and feedback pop become near-instant.
+
+### Definitions
+
+| Term | Meaning |
+|------|---------|
+| **Feedback state** | `{ answered, isCorrect, selected, correct }` from `getChooseResult()` |
+| **Cheer** | Positive line on a correct choose answer |
+| **Encouragement** | Supportive line on an incorrect choose answer (not a score or judgment) |
+| **Enter / exit transition** | CSS animations on card mount vs. before `NEXT` |
+
+Listen and repeat cards do not use `ExerciseFeedback` yet; only the choose type has scored feedback.
 
 ---
 
@@ -318,7 +365,7 @@ Choose cards have **immediate** correct/incorrect feedback. **TSH-004** will add
 
 1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` (surface, foreground, accent, radius, shadow, motion duration/easing). Reduced motion is handled by shortening durations under `prefers-reduced-motion: reduce`.
 2. **`src/index.css`** imports tokens, then **`tailwindcss`**, then maps variables into Tailwind’s **`@theme`** block so utilities like `bg-surface`, `text-accent`, `rounded-card` stay aligned with tokens.
-3. **`src/styles/motion.css`** holds shared animation utilities (e.g. card enter) used alongside Tailwind classes.
+3. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce) used alongside Tailwind classes.
 
 **Why tokens first:** Tailwind v4’s `@theme` resolves against CSS variables; loading tokens before `@theme` keeps utilities and raw CSS in sync.
 
@@ -363,7 +410,8 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-001 | Done | Scaffold, tokens, PWA baseline |
 | TSH-002 | Done | Lesson state machine + static config |
 | TSH-003 | Done | 3 exercise types, 5 cards, speech playback, choose feedback |
-| TSH-004 … TSH-009 | Planned | Card transitions, progress bar, rewards, deploy |
+| TSH-004 | Done | Cheer / encouragement copy, feedback animations, card enter & exit transitions |
+| TSH-005 … TSH-009 | Planned | Progress bar, rewards, responsive polish, deploy |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 

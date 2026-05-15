@@ -12,9 +12,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 |----|--------|---------------------|
 | **TSH-001** | Done | `feature/TSH-001-scaffold-pwa` |
 | **TSH-002** | Done | `feature/TSH-002-lesson-state-machine` |
-| **TSH-003** … **TSH-009** | Not started | See task table below |
+| **TSH-003** | Done | `feature/TSH-003-card-types-ui` |
+| **TSH-004** … **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-003** — card types and richer static content (≥2 types, ≥4 cards).
+**Next recommended task:** **TSH-004** — animated transitions between cards; extend feedback patterns if needed.
 
 ---
 
@@ -31,6 +32,46 @@ Lesson shell delivered on branch `feature/TSH-002-lesson-state-machine`. Details
 | App entry | `src/App.jsx` → `<LessonFlow />` |
 
 **Out of scope for TSH-002 (later IDs):** exercise `type` fields and per-type UI (TSH-003), correct/incorrect feedback (TSH-004), progress bar and streak/XP (TSH-005).
+
+---
+
+## TSH-003 implementation notes
+
+Card types, static content, speech playback, and choose feedback. Full reference: [README § Card types](./README.md#card-types--static-content-tsh-003).
+
+| Piece | Location |
+|--------|----------|
+| Type constants | `src/data/cardTypes.js` — `listen`, `repeat`, `choose` |
+| Lesson content | `src/data/lessonConfig.js` — `dailyLesson`, **5 cards** |
+| Type router | `src/components/lesson/cards/CardExercise.jsx` |
+| Listen UI | `src/components/lesson/cards/ListenExercise.jsx` |
+| Repeat UI | `src/components/lesson/cards/RepeatExercise.jsx` |
+| Choose UI | `src/components/lesson/cards/ChooseExercise.jsx` |
+| Play button | `src/components/lesson/PlayModelButton.jsx` |
+| Speech helper | `src/lib/speechModel.js` — Web Speech API |
+| Choose logic | `src/lib/chooseResult.js` — pure `getChooseResult()` |
+| Feedback banner | `src/components/lesson/ExerciseFeedback.jsx` |
+| Card shell | `src/components/lesson/CardScreen.jsx` — choose selection + Continue gate |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| ≥ 2 exercise types | 3 types: listen, repeat, choose |
+| ≥ 4 cards | 5 cards in `dailyLesson.cards` |
+| Static content module | `lessonConfig.js` + `cardTypes.js` |
+
+### Pulled forward (not full TSH-004)
+
+- **Choose correct/incorrect** — immediate visual + message feedback on tap; options lock until Continue.
+- **Web Speech “Play model”** — no bundled audio; `modelText` uses natural words for TTS.
+
+### Still for TSH-004+
+
+- Animated transition between cards (beyond `.ts-card-enter`).
+- Progress bar through lesson (TSH-005).
+- Streak / XP on end screen (TSH-005).
+- Recorded clinician audio (optional / innovation).
 
 ---
 
@@ -69,7 +110,7 @@ Lesson shell delivered on branch `feature/TSH-002-lesson-state-machine`. Details
 |----|------|---------|--------------|
 | **TSH-001** | Scaffold & PWA baseline | Project scaffold (e.g. Vite ), baseline folders, lint/format if desired, dev/build scripts | `feature/TSH-001-scaffold-pwa` |
 | **TSH-002** | Lesson state machine | **Done.** Start screen, sequential cards, end state; `lessonConfig.js` + `lessonMachine.js` drive the flow | `feature/TSH-002-lesson-state-machine` |
-| **TSH-003** | Card types & content | At least **two** exercise types and **four** cards total; static content module | `feature/TSH-003-card-types-ui` |
+| **TSH-003** | Card types & content | **Done.** 3 types, 5 cards, static module, speech + choose feedback | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Feedback & transitions | Correct/incorrect feedback states; at least one animated transition between cards | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Completion & rewards | Progress indicator through lesson; lesson-complete screen with streak or XP-style reward | `feature/TSH-005-completion-rewards` |
 | **TSH-006** | Responsive & a11y | Mobile-first layout; sensible tap targets; optional `prefers-reduced-motion` handling | `feature/TSH-006-responsive-a11y` |
@@ -95,8 +136,9 @@ Optional: open a pull request per task for review practice; for solo work, local
 
 | Brief requirement | Covered by |
 |-------------------|------------|
-| ≥4 cards, ≥2 types | TSH-003 |
-| Progress, animation, feedback | TSH-004, TSH-005 |
+| ≥4 cards, ≥2 types | TSH-003 ✓ |
+| Choose feedback, play model | TSH-003 (early) |
+| Progress, animation between cards | TSH-004, TSH-005 |
 | Completion / streak–XP | TSH-005 |
 | Responsive PWA | TSH-006, TSH-007 |
 | Innovation + short note | TSH-008 |

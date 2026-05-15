@@ -1,6 +1,8 @@
 # TopSpeech Health
 
-Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. This repository is the **TopSpeech** assignment scaffold: React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
+Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
+
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. Card exercise types, feedback, and rewards are planned in later tasks (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -11,11 +13,12 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 3. [Getting started](#getting-started)
 4. [NPM scripts](#npm-scripts)
 5. [Project layout](#project-layout)
-6. [Styling & design tokens](#styling--design-tokens)
-7. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-8. [Linting & formatting](#linting--formatting)
-9. [Roadmap & delivery](#roadmap--delivery)
-10. [Troubleshooting](#troubleshooting)
+6. [Lesson flow](#lesson-flow)
+7. [Styling & design tokens](#styling--design-tokens)
+8. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+9. [Linting & formatting](#linting--formatting)
+10. [Roadmap & delivery](#roadmap--delivery)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -23,7 +26,7 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 
 | Layer | Choice | Notes |
 |--------|--------|--------|
-| Runtime | **React 19** | Entry: `src/main.jsx`, root UI: `src/App.jsx`. |
+| Runtime | **React 19** | Entry: `src/main.jsx`; root renders `LessonFlow` via `src/App.jsx`. |
 | Build | **Vite 8** | Fast dev server, optimized production builds. |
 | Styling | **Tailwind CSS v4** via `@tailwindcss/vite` | Theme maps to CSS variables in `src/index.css` (`@theme`). |
 | PWA | **vite-plugin-pwa** + **Workbox** | Manifest injection, `generateSW` precache strategy. |
@@ -47,7 +50,9 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`). Use **`npm run preview`** after a production build to verify the PWA and caching behavior against the real `dist/` output.
+Open the URL Vite prints (usually `http://localhost:5173`). You should see the **lesson start screen**; tap **Start lesson** to walk through placeholder cards, then **Practice again** to return to start.
+
+Use **`npm run preview`** after a production build to verify the PWA and caching behavior against the real `dist/` output.
 
 ---
 
@@ -70,14 +75,19 @@ Open the URL Vite prints (usually `http://localhost:5173`). Use **`npm run previ
 Assignment_TopSpeech/
 ├── public/                 # Static files copied as-is (favicon, PWA icons, …)
 ├── src/
-│   ├── assets/             # Images/audio/etc. imported from JS (placeholders via .gitkeep)
-│   ├── components/       # Reusable UI (placeholders via .gitkeep)
-│   ├── hooks/              # Shared React hooks
-│   ├── lib/                # Pure helpers, small modules
+│   ├── assets/             # Images/audio/etc. imported from JS
+│   ├── components/
+│   │   └── lesson/         # StartScreen, CardScreen, EndScreen, LessonFlow, LessonButton
+│   ├── data/
+│   │   └── lessonConfig.js # Static `dailyLesson` — titles, cards[], completion copy
+│   ├── hooks/
+│   │   └── useLessonMachine.js  # useReducer wrapper for lesson navigation
+│   ├── lib/
+│   │   └── lessonMachine.js     # Pure reducer: start → card → end
 │   ├── styles/
 │   │   ├── tokens.css      # :root CSS variables (colors, radius, motion)
-│   │   └── motion.css      # Shared motion / animation helpers
-│   ├── App.jsx             # Root application shell
+│   │   └── motion.css      # Shared motion / animation helpers (e.g. .ts-card-enter)
+│   ├── App.jsx             # Root shell — renders `<LessonFlow />`
 │   ├── main.jsx            # Entry: React root + PWA `registerSW`
 │   ├── index.css           # Tailwind entry + @theme mapping + global base
 │   └── vite-env.d.ts       # Vite + vite-plugin-pwa client references
@@ -89,6 +99,40 @@ Assignment_TopSpeech/
 ├── DEVELOPMENT_PLAN.md     # Task IDs (TSH-001 …), phases, git workflow
 └── README.md               # This file
 ```
+
+---
+
+## Lesson flow
+
+Implemented in **TSH-002**. The app is a small **finite state machine**: one phase at a time, with navigation driven by static lesson data (not hardcoded card counts in UI code).
+
+### Phases and actions
+
+| Phase | Screen | User action | Next phase |
+|--------|--------|-------------|------------|
+| `start` | `StartScreen` | Start lesson | `card` (index `0`) |
+| `card` | `CardScreen` | Continue / Finish lesson | next card or `end` |
+| `end` | `EndScreen` | Practice again | `start` |
+
+Reducer actions: `START_LESSON`, `NEXT`, `RESTART` — see `src/lib/lessonMachine.js`.
+
+### Key files
+
+| File | Responsibility |
+|------|----------------|
+| `src/data/lessonConfig.js` | `dailyLesson`: `title`, `description`, `cards[]`, `completion` |
+| `src/lib/lessonMachine.js` | `LESSON_PHASE`, `lessonReducer`, `getCurrentCard` |
+| `src/hooks/useLessonMachine.js` | React state + `startLesson` / `next` / `restart` |
+| `src/components/lesson/LessonFlow.jsx` | Renders the screen for the current phase |
+| `src/components/lesson/*.jsx` | Presentational start / card / end UI |
+
+### Extending the lesson
+
+1. **Add or edit cards** in `lessonConfig.js` (`id`, `title`, `body` today; `type` and exercise fields in **TSH-003**).
+2. **Card count** is `lesson.cards.length` — the reducer uses it so the last **NEXT** transitions to `end` automatically.
+3. **New navigation** (e.g. skip, back): extend `lessonReducer` and expose actions from `useLessonMachine`; keep UI components thin.
+
+Placeholder card copy is intentional until **TSH-003** (exercise types), **TSH-004** (feedback/transitions), and **TSH-005** (progress bar / streak–XP on the end screen).
 
 ---
 
@@ -134,11 +178,15 @@ Assignment_TopSpeech/
 
 ## Roadmap & delivery
 
-Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and merge order in:
+Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and merge order in **[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)**.
 
-**[DEVELOPMENT_PLAN.md](./DEVELOPMENT_PLAN.md)**
+| ID | Status | Notes |
+|----|--------|--------|
+| TSH-001 | Done | Scaffold, tokens, PWA baseline |
+| TSH-002 | Done | Lesson state machine + static config (this section) |
+| TSH-003 … TSH-009 | Planned | Card types, feedback, rewards, a11y polish, deploy |
 
-That document is the source of truth for phases (lesson flow, cards, feedback, PWA polish, deploy, etc.). This README stays focused on **how to run and extend the codebase**; the plan describes **what to build next**.
+That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
 ---
 

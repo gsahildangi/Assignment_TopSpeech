@@ -6,6 +6,34 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 
 ---
 
+## Progress
+
+| ID | Status | Branch (when used) |
+|----|--------|---------------------|
+| **TSH-001** | Done | `feature/TSH-001-scaffold-pwa` |
+| **TSH-002** | Done | `feature/TSH-002-lesson-state-machine` |
+| **TSH-003** … **TSH-009** | Not started | See task table below |
+
+**Next recommended task:** **TSH-003** — card types and richer static content (≥2 types, ≥4 cards).
+
+---
+
+## TSH-002 implementation notes
+
+Lesson shell delivered on branch `feature/TSH-002-lesson-state-machine`. Details and extension guide: [README § Lesson flow](./README.md#lesson-flow).
+
+| Piece | Location |
+|--------|----------|
+| Static lesson | `src/data/lessonConfig.js` (`dailyLesson`, 3 placeholder cards) |
+| State machine | `src/lib/lessonMachine.js` — phases `start` \| `card` \| `end`; actions `START_LESSON`, `NEXT`, `RESTART` |
+| React hook | `src/hooks/useLessonMachine.js` |
+| UI orchestration | `src/components/lesson/LessonFlow.jsx` + `StartScreen`, `CardScreen`, `EndScreen`, `LessonButton` |
+| App entry | `src/App.jsx` → `<LessonFlow />` |
+
+**Out of scope for TSH-002 (later IDs):** exercise `type` fields and per-type UI (TSH-003), correct/incorrect feedback (TSH-004), progress bar and streak/XP (TSH-005).
+
+---
+
 ## Legend
 
 | Pattern | Meaning |
@@ -40,7 +68,7 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | ID | Name | Outcome | Branch name |
 |----|------|---------|--------------|
 | **TSH-001** | Scaffold & PWA baseline | Project scaffold (e.g. Vite ), baseline folders, lint/format if desired, dev/build scripts | `feature/TSH-001-scaffold-pwa` |
-| **TSH-002** | Lesson state machine | Start screen, sequential cards, end state; static lesson configuration driving the flow | `feature/TSH-002-lesson-state-machine` |
+| **TSH-002** | Lesson state machine | **Done.** Start screen, sequential cards, end state; `lessonConfig.js` + `lessonMachine.js` drive the flow | `feature/TSH-002-lesson-state-machine` |
 | **TSH-003** | Card types & content | At least **two** exercise types and **four** cards total; static content module | `feature/TSH-003-card-types-ui` |
 | **TSH-004** | Feedback & transitions | Correct/incorrect feedback states; at least one animated transition between cards | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Completion & rewards | Progress indicator through lesson; lesson-complete screen with streak or XP-style reward | `feature/TSH-005-completion-rewards` |

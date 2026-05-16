@@ -16,9 +16,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-004** | Done | `feature/TSH-004-feedback-transitions` |
 | **TSH-005** | Done | `feature/TSH-005-completion-rewards` |
 | **TSH-006** | Done | `feature/TSH-006-responsive-a11y` |
-| **TSH-007** … **TSH-009** | Not started | See task table below |
+| **TSH-007** | Done | `feature/TSH-007-pwa-manifest-sw` |
+| **TSH-008** … **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-007** — PWA manifest polish, icons, service worker installability.
+**Next recommended task:** **TSH-008** — Innovation (speech-therapy-specific differentiator + README note).
 
 ---
 
@@ -160,6 +161,37 @@ Responsive layout and accessibility. Full reference: [README § Responsive layou
 - **Layout in CSS utilities** (`ts-*`) keeps spacing/safe-area rules out of every component; screens only add motion/structure classes.
 - **JS exit delay matches CSS** so reduced-motion users are not blocked 280ms after tapping Continue.
 - **Choose uses `fieldset`**, not `listbox`, because options are independent buttons (not a single listbox widget with arrow-key navigation).
+
+---
+
+## TSH-007 implementation notes
+
+PWA manifest, install icons, and service worker strategy. Full reference: [README § PWA](./README.md#pwa-manifest--service-worker).
+
+| Piece | Location |
+|--------|----------|
+| Manifest + Workbox | `vite.config.js` — `VitePWA({ manifest, workbox, devOptions })` |
+| Icon source SVG | `public/icons/icon-source.svg` — teal brand mark (regenerate PNGs with `npm run icons`) |
+| Install PNGs | `public/pwa-192.png`, `pwa-512.png`, `apple-touch-icon.png` |
+| Icon script | `scripts/generate-pwa-icons.mjs` + `sharp` (devDependency) |
+| SW registration | `src/lib/registerPwa.js` — lifecycle hooks; `src/main.jsx` calls it on boot |
+| iOS / install meta | `index.html` — `apple-touch-icon`, `apple-mobile-web-app-*` |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| Web app manifest | Generated at build as `manifest.webmanifest` (name, colors, `standalone`, icons, `start_url`, `scope`, `id`) |
+| Icons | 192 + 512 PNG (+ 180 Apple touch); separate `purpose: any` and `maskable` entries |
+| Service worker | Workbox `generateSW` precaches app shell; `navigateFallback` for SPA offline |
+| Installable | HTTPS + manifest + registered SW; test with `npm run build && npm run preview` |
+
+### Design choices
+
+- **`registerType: 'autoUpdate'`** — new deploys activate on next visit without a blocking “update” modal (good for lesson content).
+- **Precache-first** — lesson UI and assets load offline after first visit; no network runtime rules needed yet (static config, no API).
+- **`registerPwa.js`** — keeps `main.jsx` thin and centralizes dev logging for SW registration errors.
+- **Branded icons** — source SVG matches `--ts-color-accent` / surface tokens; favicon.svg stays as dev tab icon.
 
 ---
 

@@ -5,10 +5,10 @@ export function ListenExercise({ card }) {
   const speakRate = card.modelRate
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <p className="text-foreground-muted">{card.prompt}</p>
       <div
-        className="flex flex-col items-center gap-2 rounded-card border border-accent-subtle bg-accent-subtle/40 px-6 py-8"
+        className="flex flex-col items-center gap-2 rounded-card border border-accent-subtle bg-accent-subtle/40 px-5 py-5 sm:py-6"
         aria-label={`Target sound: ${card.target}`}
       >
         <span className="text-5xl font-semibold tracking-tight text-accent">

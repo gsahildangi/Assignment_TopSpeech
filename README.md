@@ -2,30 +2,72 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), **installable PWA manifest + service worker** (`TSH-007`), and **articulation self-check on repeat cards** (`TSH-008`) are implemented. Deploy and submission polish are next (see [Roadmap & delivery](#roadmap--delivery)).
+**Live demo:** after you deploy from this repo on Vercel, paste your production URL below (Dashboard → your project → **Domains**).
+
+**[Open TopSpeech Health](https://assignment-top-speech.vercel.app)** ← *replace with your Vercel URL before submission*
+
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), **installable PWA manifest + service worker** (`TSH-007`), **articulation self-check on repeat cards** (`TSH-008`), and **dark UI + submission docs** (`TSH-009`) are implemented.
 
 ---
 
 ## Table of contents
 
-1. [Stack](#stack)
-2. [Prerequisites](#prerequisites)
-3. [Getting started](#getting-started)
-4. [NPM scripts](#npm-scripts)
-5. [Project layout](#project-layout)
-6. [Lesson flow](#lesson-flow)
-7. [Card types & static content (TSH-003)](#card-types--static-content-tsh-003)
-8. [Speech model playback](#speech-model-playback)
-9. [Choose exercise feedback](#choose-exercise-feedback)
-10. [Feedback & card transitions (TSH-004)](#feedback--card-transitions-tsh-004)
-11. [Completion & rewards (TSH-005)](#completion--rewards-tsh-005)
-12. [Responsive layout & accessibility (TSH-006)](#responsive-layout--accessibility-tsh-006)
-13. [Styling & design tokens](#styling--design-tokens)
-14. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-15. [Innovation (TSH-008)](#innovation-tsh-008)
-16. [Linting & formatting](#linting--formatting)
-17. [Roadmap & delivery](#roadmap--delivery)
-18. [Troubleshooting](#troubleshooting)
+1. [Design walkthrough](#design-walkthrough)
+2. [Stack](#stack)
+3. [Prerequisites](#prerequisites)
+4. [Getting started](#getting-started)
+5. [NPM scripts](#npm-scripts)
+6. [Project layout](#project-layout)
+7. [Lesson flow](#lesson-flow)
+8. [Card types & static content (TSH-003)](#card-types--static-content-tsh-003)
+9. [Speech model playback](#speech-model-playback)
+10. [Choose exercise feedback](#choose-exercise-feedback)
+11. [Feedback & card transitions (TSH-004)](#feedback--card-transitions-tsh-004)
+12. [Completion & rewards (TSH-005)](#completion--rewards-tsh-005)
+13. [Responsive layout & accessibility (TSH-006)](#responsive-layout--accessibility-tsh-006)
+14. [Styling & design tokens](#styling--design-tokens)
+15. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
+16. [Innovation (TSH-008)](#innovation-tsh-008)
+17. [Deploy (Vercel)](#deploy-vercel)
+18. [Linting & formatting](#linting--formatting)
+19. [Roadmap & delivery](#roadmap--delivery)
+20. [Troubleshooting](#troubleshooting)
+
+---
+
+## Design walkthrough
+
+This section is the written design walkthrough for **TSH-009** (no separate Loom required). It explains what a reviewer sees when opening the live PWA on a phone or narrow browser window.
+
+### Visual language
+
+- **Dark-first UI** — warm stone surfaces (`#0c0a09` / `#1c1917`) with **teal accent** (`#2dd4bf`) for progress, CTAs, and focus rings. Tokens live in `src/styles/tokens.css` and map to Tailwind utilities via `@theme` in `src/index.css`.
+- **Card shell** — each step sits in a raised card with soft shadow and 16px radius; content scrolls inside the card on short viewports so **Continue** stays pinned at the bottom without page bounce.
+- **Motion** — cards fade/slide in on enter and out on Continue; choose feedback pops in with a small cheer bounce. All respect `prefers-reduced-motion` (CSS + `getCardExitDelayMs()`).
+
+### Screen flow (one daily lesson)
+
+| Step | What the learner sees |
+|------|------------------------|
+| **Start** | Lesson title, short description, card count, **Start lesson**. |
+| **Cards 1–5** | Progress bar + one exercise at a time: **listen** (model + play), **repeat** (target word + play + self-check), **choose** (tap option → instant feedback). |
+| **End** | Completion copy, **XP** and **streak** stats (persisted in `localStorage`), **Practice again**. |
+
+### Exercise patterns
+
+1. **Listen** — large target grapheme, optional phonetic line, **Play model** (Web Speech).
+2. **Repeat** — same target block, tip callout, then **How did that feel?** self-check (three honest options, no pass/fail) before Continue unlocks.
+3. **Choose** — prompt + stacked options; correct/incorrect banners with encouragement copy, then Continue.
+
+### Differentiator vs typical language apps
+
+Duolingo-style flows often auto-grade and advance. Here, **repeat** cards use **articulation self-check** (TSH-008) so the learner reflects like a short SLP check-in instead of a red/green score. See [Innovation (TSH-008)](#innovation-tsh-008).
+
+### Layout & accessibility choices
+
+- **44px minimum tap targets**, skip link to lesson main, visible `:focus-visible` rings.
+- **Safe-area** padding for notched phones; viewport uses `100svh` where supported to avoid double scrollbars.
+- **PWA** — installable with manifest + Workbox precache; offline shell after first visit.
 
 ---
 
@@ -517,7 +559,7 @@ Base layout is **mobile-first**: default gutters/padding target small screens; `
 
 ## Styling & design tokens
 
-1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` (surface, foreground, accent, radius, shadow, motion duration/easing). Reduced motion shortens durations there; see [TSH-006](#responsive-layout--accessibility-tsh-006) for full motion handling.
+1. **`src/styles/tokens.css`** defines **`--ts-*`** variables on `:root` for a **dark theme** (`color-scheme: dark`) — surface, foreground, accent, radius, shadow, motion duration/easing. Reduced motion shortens durations there; see [TSH-006](#responsive-layout--accessibility-tsh-006) for full motion handling.
 2. **`src/index.css`** imports tokens, then **`tailwindcss`**, then **`layout.css`**, then **`motion.css`**, and maps variables into Tailwind’s **`@theme`** block so utilities like `bg-surface`, `text-accent`, `rounded-card` stay aligned with tokens.
 3. **`src/styles/layout.css`** holds the lesson shell, safe-area padding, tap-target and focus-ring utilities (TSH-006).
 4. **`src/styles/motion.css`** holds shared animation utilities (card enter/exit, feedback pop, cheer icon bounce, progress bar fill, reward stat pop-in) used alongside Tailwind classes.
@@ -616,6 +658,19 @@ Duolingo-style apps usually **auto-grade** speech or taps and move on. In real s
 
 ---
 
+## Deploy (Vercel)
+
+This repo is set up for a **zero-config Vercel** deploy from Git:
+
+1. Import the GitHub repo in [Vercel](https://vercel.com/new).
+2. Framework preset: **Vite** (build: `npm run build`, output: `dist`).
+3. Deploy — each push to `main` can auto-deploy.
+4. Copy the production URL into the **[Live demo](#topspeech-health)** link at the top of this README.
+
+No `vercel.json` is required for this SPA; client routing is handled by Vite’s `index.html` shell and Workbox `navigateFallback` in production.
+
+---
+
 ## Linting & formatting
 
 - **ESLint** (`eslint.config.js`): recommended JS rules, React Hooks, React Refresh for Vite, browser globals. **`eslint-config-prettier/flat`** is applied last so it does not fight Prettier on formatting rules.
@@ -637,7 +692,7 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-006 | Done | Mobile-first shell, 44px tap targets, focus rings, skip link, reduced motion (CSS + JS) |
 | TSH-007 | Done | Manifest, branded icons, Workbox precache + SPA offline fallback |
 | TSH-008 | Done | Articulation self-check on repeat cards |
-| TSH-009 | Planned | Deploy, live URL, walkthrough |
+| TSH-009 | Done | Dark UI, scroll/layout polish, README live URL + design walkthrough, Vercel deploy notes |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 

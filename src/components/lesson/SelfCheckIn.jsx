@@ -13,7 +13,7 @@ function optionClass(isSelected) {
 export function SelfCheckIn({ selectedId, onSelect }) {
   return (
     <div
-      className="flex flex-col gap-3 rounded-card border border-accent-subtle/60 bg-surface-elevated px-4 py-4"
+      className="flex flex-col gap-2.5 rounded-card border border-accent-subtle/60 bg-surface px-3 py-3 sm:px-4 sm:py-3.5"
       role="group"
       aria-labelledby="self-check-heading"
     >

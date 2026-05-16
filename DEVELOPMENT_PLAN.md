@@ -18,9 +18,9 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-006** | Done | `feature/TSH-006-responsive-a11y` |
 | **TSH-007** | Done | `feature/TSH-007-pwa-manifest-sw` |
 | **TSH-008** | Done | `feature/TSH-008-innovation` |
-| **TSH-009** | Not started | See task table below |
+| **TSH-009** | Done | `feature/TSH-009-deploy-docs` |
 
-**Next recommended task:** **TSH-009** — Deploy & submission polish (live URL, README demo link, walkthrough).
+**Next recommended task:** None — assignment delivery complete. Update the README [live demo](README.md#topspeech-health) link after your Vercel deploy.
 
 ---
 

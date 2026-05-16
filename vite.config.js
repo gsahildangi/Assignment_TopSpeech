@@ -4,8 +4,8 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 /** Shared with index.html meta tags and icon generator. */
-const PWA_THEME_COLOR = '#0f766e'
-const PWA_BACKGROUND_COLOR = '#faf8f5'
+const PWA_THEME_COLOR = '#0c0a09'
+const PWA_BACKGROUND_COLOR = '#0c0a09'
 
 // https://vite.dev/config/
 export default defineConfig({

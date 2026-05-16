@@ -37,12 +37,12 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
   return (
     <section
       className={[
-        'ts-lesson-card',
+        'ts-lesson-card ts-lesson-card--fill',
         isExiting ? 'ts-card-exit' : 'ts-card-enter',
       ].join(' ')}
       aria-labelledby="lesson-card-title"
     >
-      <div className="flex flex-col gap-4">
+      <div className="ts-lesson-card__body">
         <h2 id="lesson-card-title" className="text-xl font-semibold text-foreground">
           {card.title}
         </h2>
@@ -54,9 +54,11 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
           onSelfCheckSelect={setSelfCheckRating}
         />
       </div>
-      <LessonButton onClick={handleContinue} disabled={!canContinue || isExiting}>
-        {isLast ? 'Finish lesson' : 'Continue'}
-      </LessonButton>
+      <div className="ts-lesson-card__footer">
+        <LessonButton onClick={handleContinue} disabled={!canContinue || isExiting}>
+          {isLast ? 'Finish lesson' : 'Continue'}
+        </LessonButton>
+      </div>
     </section>
   )
 }

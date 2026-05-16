@@ -8,12 +8,16 @@ import { LessonButton } from './LessonButton.jsx'
 export function CardScreen({ card, cardNumber, cardCount, onNext }) {
   const isLast = cardNumber === cardCount
   const isChoose = card.type === CARD_TYPE.CHOOSE
+  const isRepeat = card.type === CARD_TYPE.REPEAT
   const [chooseSelection, setChooseSelection] = useState(null)
+  const [selfCheckRating, setSelfCheckRating] = useState(null)
   const [isExiting, setIsExiting] = useState(false)
   const reducedMotion = useReducedMotion()
   const cardExitMs = getCardExitDelayMs(reducedMotion)
 
-  const canContinue = !isChoose || chooseSelection !== null
+  const canContinue =
+    (!isChoose || chooseSelection !== null) &&
+    (!isRepeat || selfCheckRating !== null)
 
   useEffect(() => {
     if (!isExiting) return undefined
@@ -46,6 +50,8 @@ export function CardScreen({ card, cardNumber, cardCount, onNext }) {
           card={card}
           chooseSelection={chooseSelection}
           onChooseSelect={setChooseSelection}
+          selfCheckRating={selfCheckRating}
+          onSelfCheckSelect={setSelfCheckRating}
         />
       </div>
       <LessonButton onClick={handleContinue} disabled={!canContinue || isExiting}>

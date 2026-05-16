@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), and **installable PWA manifest + service worker** (`TSH-007`) are implemented. Innovation and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), **installable PWA manifest + service worker** (`TSH-007`), and **articulation self-check on repeat cards** (`TSH-008`) are implemented. Deploy and submission polish are next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -22,9 +22,10 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 12. [Responsive layout & accessibility (TSH-006)](#responsive-layout--accessibility-tsh-006)
 13. [Styling & design tokens](#styling--design-tokens)
 14. [PWA (manifest & service worker)](#pwa-manifest--service-worker)
-15. [Linting & formatting](#linting--formatting)
-16. [Roadmap & delivery](#roadmap--delivery)
-17. [Troubleshooting](#troubleshooting)
+15. [Innovation (TSH-008)](#innovation-tsh-008)
+16. [Linting & formatting](#linting--formatting)
+17. [Roadmap & delivery](#roadmap--delivery)
+18. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -88,7 +89,7 @@ Assignment_TopSpeech/
 │   │       ├── cards/      # ListenExercise, RepeatExercise, ChooseExercise, CardExercise
 │   │       ├── LessonFlow.jsx, CardScreen.jsx, StartScreen.jsx, EndScreen.jsx
 │   │       ├── LessonProgress.jsx, RewardStat.jsx
-│   │       ├── LessonButton.jsx, PlayModelButton.jsx, ExerciseFeedback.jsx
+│   │       ├── LessonButton.jsx, PlayModelButton.jsx, ExerciseFeedback.jsx, SelfCheckIn.jsx
 │   ├── data/
 │   │   ├── lessonConfig.js # Static `dailyLesson` — all copy and card payloads
 │   │   └── cardTypes.js    # CARD_TYPE constants (listen | repeat | choose)
@@ -103,6 +104,7 @@ Assignment_TopSpeech/
 │   │   ├── lessonProgress.js # Pure progress fraction for the lesson bar
 │   │   ├── lessonRewards.js  # XP + streak on lesson completion
 │   │   ├── rewardsStore.js   # localStorage persistence for rewards
+│   │   ├── selfCheckOptions.js # Articulation self-check ratings (TSH-008)
 │   │   └── motionPreference.js # Card exit delay synced with reduced motion
 │   ├── styles/
 │   │   ├── tokens.css
@@ -599,6 +601,21 @@ Open the preview URL → DevTools → **Application** → Manifest / Service Wor
 
 ---
 
+## Innovation (TSH-008)
+
+Duolingo-style apps usually **auto-grade** speech or taps and move on. In real speech therapy, clinicians often ask clients to **self-monitor** productions when a microphone or therapist is not in the room — building awareness matters as much as a “correct” flag.
+
+**Articulation self-check** appears on every **repeat** card after the learner plays the model and says the target aloud. They choose how it felt — *Felt close*, *Getting there*, or *Want another try* — before **Continue** unlocks. There is no pass/fail score; all three paths are valid. That mirrors a short SLP check-in (“how did that feel?”) instead of gamified right/wrong, and it fits a PWA that uses Web Speech for models but does not ship speech-to-text yet.
+
+| Piece | Location |
+|--------|----------|
+| Rating options | `src/lib/selfCheckOptions.js` |
+| UI | `src/components/lesson/SelfCheckIn.jsx` |
+| Repeat card wiring | `src/components/lesson/cards/RepeatExercise.jsx` |
+| Continue gate | `src/components/lesson/CardScreen.jsx` (same pattern as choose selection) |
+
+---
+
 ## Linting & formatting
 
 - **ESLint** (`eslint.config.js`): recommended JS rules, React Hooks, React Refresh for Vite, browser globals. **`eslint-config-prettier/flat`** is applied last so it does not fight Prettier on formatting rules.
@@ -619,7 +636,8 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-005 | Done | Lesson progress bar, XP + streak on end screen, `localStorage` persistence |
 | TSH-006 | Done | Mobile-first shell, 44px tap targets, focus rings, skip link, reduced motion (CSS + JS) |
 | TSH-007 | Done | Manifest, branded icons, Workbox precache + SPA offline fallback |
-| TSH-008 … TSH-009 | Planned | Innovation, deploy |
+| TSH-008 | Done | Articulation self-check on repeat cards |
+| TSH-009 | Planned | Deploy, live URL, walkthrough |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
@@ -632,6 +650,7 @@ That document is the source of truth for phases and git workflow. This README fo
 | **Play model does nothing** | Use Chrome, Safari, or Edge (not all browsers support `speechSynthesis`). Ensure volume is up and the tab is not muted. Tap must come from a real click (required on iOS). |
 | **Play model sounds odd** | TTS quality varies by OS/voice. Set `modelText` to a natural word in `lessonConfig.js` (see [Speech model playback](#speech-model-playback)). |
 | **Choose card: no feedback** | You must tap an option first; feedback appears immediately, then **Continue**. Refresh if HMR left stale state. |
+| **Repeat card: Continue disabled** | Tap **How did that feel?** after saying the target aloud — same gate as choose cards. |
 | **Streak / XP look wrong** | Rewards live in `localStorage` (`topspeech_rewards`). Clear site data or use a private window to reset. Same-day replays add XP but do not increment streak again. |
 | **Progress bar stuck** | Bar only shows in the `card` phase. Finish the current card with **Continue**; fill updates when the next card mounts. |
 | **No `dist/sw.js` after build** | Ensure the build finished completely. The PWA plugin runs Workbox after the main bundle; a failed or interrupted build can omit the SW. Re-run `npm run build` and look for the **PWA v…** log lines. |

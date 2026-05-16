@@ -13,6 +13,9 @@ dist-ssr
 dev-dist
 *.local
 
+# Cursor (local plans & editor state — not for the repo)
+.cursor/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

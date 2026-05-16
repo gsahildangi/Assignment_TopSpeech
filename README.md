@@ -4,7 +4,7 @@ Speech-therapy-style lesson practice delivered as a **mobile-first Progressive W
 
 **Live demo:** after you deploy from this repo on Vercel, paste your production URL below (Dashboard → your project → **Domains**).
 
-**[Open TopSpeech Health](https://assignment-top-speech.vercel.app)** ← *replace with your Vercel URL before submission*
+**[Open TopSpeech Health](https://assignment-top-speech.vercel.app)**
 
 **Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), **installable PWA manifest + service worker** (`TSH-007`), **articulation self-check on repeat cards** (`TSH-008`), and **dark UI + submission docs** (`TSH-009`) are implemented.
 

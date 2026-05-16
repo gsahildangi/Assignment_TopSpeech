@@ -30,7 +30,7 @@ export function ChooseExercise({ card, selectedId, onSelect }) {
   const { answered, isCorrect, selected, correct } = getChooseResult(card, selectedId)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <p className="text-foreground-muted">{card.prompt}</p>
       <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
         <legend className="sr-only">Word choices</legend>

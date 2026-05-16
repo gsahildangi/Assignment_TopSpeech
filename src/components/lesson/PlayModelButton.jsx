@@ -29,7 +29,7 @@ export function PlayModelButton({ text, rate, className = '' }) {
     <div className={`flex flex-col items-center gap-2 ${className}`}>
       <button
         type="button"
-        className="ts-tap-target ts-focus-ring flex w-full min-w-[var(--ts-tap-min)] items-center justify-center gap-2 rounded-pill bg-accent px-6 py-3 text-base font-medium text-white disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        className="ts-tap-target ts-focus-ring flex w-full min-w-[var(--ts-tap-min)] items-center justify-center gap-2 rounded-pill bg-accent px-6 py-3 text-base font-medium text-stone-950 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         aria-label={`Play model: ${text}`}
         aria-busy={playing}
         disabled={!supported || playing || !text?.trim()}

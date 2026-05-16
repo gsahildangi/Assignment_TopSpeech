@@ -6,10 +6,10 @@ export function RepeatExercise({ card, selfCheckRating, onSelfCheckSelect }) {
   const speakRate = card.modelRate
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       <p className="text-foreground-muted">{card.prompt}</p>
       <div
-        className="flex flex-col items-center gap-2 rounded-card border border-accent-subtle bg-surface px-6 py-8"
+        className="flex flex-col items-center gap-2 rounded-card border border-accent-subtle bg-surface px-5 py-5 sm:py-6"
         aria-label={`Repeat: ${card.target}`}
       >
         <span className="text-center text-4xl font-semibold tracking-tight text-foreground">

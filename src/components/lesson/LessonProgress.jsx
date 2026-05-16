@@ -1,10 +1,10 @@
 import { getLessonProgress } from '../../lib/lessonProgress.js'
 
-export function LessonProgress({ cardNumber, cardCount }) {
+export function LessonProgress({ cardNumber, cardCount, className = '' }) {
   const { fraction, percent, label } = getLessonProgress(cardNumber, cardCount)
 
   return (
-    <div className="flex flex-col gap-2" aria-label={label}>
+    <div className={`flex flex-col gap-2 ${className}`.trim()} aria-label={label}>
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium text-foreground-muted">{label}</span>
         <span className="text-sm font-semibold tabular-nums text-accent">{percent}%</span>

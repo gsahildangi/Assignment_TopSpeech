@@ -3,20 +3,21 @@
  * Tailwind maps these in index.css via @theme; keyframes use the same vars.
  */
 :root {
-  --ts-color-surface: #faf8f5;
-  --ts-color-surface-elevated: #ffffff;
-  --ts-color-foreground: #1c1917;
-  --ts-color-foreground-muted: #57534e;
-  --ts-color-accent: #0f766e;
-  --ts-color-accent-subtle: #ccfbf1;
-  --ts-color-success: #047857;
-  --ts-color-danger: #b91c1c;
+  color-scheme: dark;
+  --ts-color-surface: #0c0a09;
+  --ts-color-surface-elevated: #1c1917;
+  --ts-color-foreground: #fafaf9;
+  --ts-color-foreground-muted: #a8a29e;
+  --ts-color-accent: #2dd4bf;
+  --ts-color-accent-subtle: #134e4a;
+  --ts-color-success: #34d399;
+  --ts-color-danger: #f87171;
   --ts-radius-card: 1rem;
   --ts-radius-pill: 9999px;
   --ts-duration-fast: 150ms;
   --ts-duration-normal: 280ms;
   --ts-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ts-shadow-card: 0 1px 2px rgb(0 0 0 / 0.05), 0 8px 24px rgb(0 0 0 / 0.06);
+  --ts-shadow-card: 0 1px 2px rgb(0 0 0 / 0.45), 0 8px 24px rgb(0 0 0 / 0.35);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -48,7 +48,11 @@ export function LessonFlow({ lesson = dailyLesson }) {
 
       {phase === LESSON_PHASE.CARD && currentCard && (
         <>
-          <LessonProgress cardNumber={cardNumber} cardCount={cardCount} />
+          <LessonProgress
+            className="shrink-0"
+            cardNumber={cardNumber}
+            cardCount={cardCount}
+          />
           <CardScreen
             key={currentCard.id}
             card={currentCard}

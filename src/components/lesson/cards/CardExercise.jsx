@@ -13,7 +13,13 @@ const EXERCISE_BY_TYPE = {
   [CARD_TYPE.CHOOSE]: ChooseExercise,
 }
 
-export function CardExercise({ card, chooseSelection, onChooseSelect }) {
+export function CardExercise({
+  card,
+  chooseSelection,
+  onChooseSelect,
+  selfCheckRating,
+  onSelfCheckSelect,
+}) {
   const Exercise = EXERCISE_BY_TYPE[card.type]
 
   if (!Exercise) {
@@ -30,6 +36,16 @@ export function CardExercise({ card, chooseSelection, onChooseSelect }) {
         card={card}
         selectedId={chooseSelection}
         onSelect={onChooseSelect}
+      />
+    )
+  }
+
+  if (card.type === CARD_TYPE.REPEAT) {
+    return (
+      <RepeatExercise
+        card={card}
+        selfCheckRating={selfCheckRating}
+        onSelfCheckSelect={onSelfCheckSelect}
       />
     )
   }

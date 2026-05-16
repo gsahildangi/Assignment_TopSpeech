@@ -17,9 +17,10 @@ Step-by-step delivery roadmap for the engineer design assignment. Each item has 
 | **TSH-005** | Done | `feature/TSH-005-completion-rewards` |
 | **TSH-006** | Done | `feature/TSH-006-responsive-a11y` |
 | **TSH-007** | Done | `feature/TSH-007-pwa-manifest-sw` |
-| **TSH-008** … **TSH-009** | Not started | See task table below |
+| **TSH-008** | Done | `feature/TSH-008-innovation` |
+| **TSH-009** | Not started | See task table below |
 
-**Next recommended task:** **TSH-008** — Innovation (speech-therapy-specific differentiator + README note).
+**Next recommended task:** **TSH-009** — Deploy & submission polish (live URL, README demo link, walkthrough).
 
 ---
 
@@ -192,6 +193,32 @@ PWA manifest, install icons, and service worker strategy. Full reference: [READM
 - **Precache-first** — lesson UI and assets load offline after first visit; no network runtime rules needed yet (static config, no API).
 - **`registerPwa.js`** — keeps `main.jsx` thin and centralizes dev logging for SW registration errors.
 - **Branded icons** — source SVG matches `--ts-color-accent` / surface tokens; favicon.svg stays as dev tab icon.
+
+---
+
+## TSH-008 implementation notes
+
+Articulation self-check on repeat cards. Full reference: [README § Innovation](./README.md#innovation-tsh-008).
+
+| Piece | Location |
+|--------|----------|
+| Rating constants | `src/lib/selfCheckOptions.js` — `close` \| `building` \| `retry` |
+| Self-check UI | `src/components/lesson/SelfCheckIn.jsx` |
+| Repeat wiring | `src/components/lesson/cards/RepeatExercise.jsx` |
+| Continue gate | `src/components/lesson/CardScreen.jsx` — requires rating on repeat, like choose selection |
+
+### Assignment criteria met
+
+| Requirement | How |
+|-------------|-----|
+| One Duolingo-different mechanic | Post-repeat **self-monitoring** instead of auto speech grading |
+| 2–4 sentence README note | [README § Innovation](./README.md#innovation-tsh-008) |
+
+### Design choices
+
+- **Self-report, not STT** — fits a static PWA without microphone scoring; aligns with how SLPs coach home practice.
+- **No wrong answers** — all ratings unlock Continue; *Want another try* nudges replay without blocking progress.
+- **Gate in `CardScreen`** — same pattern as choose cards keeps exercise components presentational.
 
 ---
 

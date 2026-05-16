@@ -1,6 +1,7 @@
 import { PlayModelButton } from '../PlayModelButton.jsx'
+import { SelfCheckIn } from '../SelfCheckIn.jsx'
 
-export function RepeatExercise({ card }) {
+export function RepeatExercise({ card, selfCheckRating, onSelfCheckSelect }) {
   const speakText = card.modelText ?? card.target
   const speakRate = card.modelRate
 
@@ -25,6 +26,7 @@ export function RepeatExercise({ card }) {
           {card.tip}
         </p>
       )}
+      <SelfCheckIn selectedId={selfCheckRating} onSelect={onSelfCheckSelect} />
     </div>
   )
 }

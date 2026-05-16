@@ -2,7 +2,7 @@
 
 Speech-therapy-style lesson practice delivered as a **mobile-first Progressive Web App (PWA)**. Built with React + Vite, Tailwind v4, design tokens, ESLint, Prettier, and a **Web App Manifest + Workbox service worker** baseline.
 
-**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), and **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`) are implemented. PWA polish, innovation, and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
+**Current UX:** a **lesson state machine** (`TSH-002`) drives **start → sequential cards → end**, powered by static config in `src/data/lessonConfig.js`. **Three exercise types** (`listen`, `repeat`, `choose`) with **five cards**, **Web Speech playback**, **choose-card feedback with cheer and encouragement**, **animated card enter/exit transitions**, a **lesson progress bar**, **XP + streak rewards** on completion (`TSH-003`–`TSH-005`), **mobile-first layout with tap targets, keyboard focus, and reduced-motion support** (`TSH-006`), and **installable PWA manifest + service worker** (`TSH-007`) are implemented. Innovation and deploy are next (see [Roadmap & delivery](#roadmap--delivery)).
 
 ---
 
@@ -72,6 +72,7 @@ Use **`npm run preview`** after a production build to verify the PWA and caching
 | `npm run lint` | ESLint over the repo (respects ignores such as `dist/` and `dev-dist/`). |
 | `npm run format` | Prettier **write** on tracked file types (see [Linting & formatting](#linting--formatting)). |
 | `npm run format:check` | Prettier **check** only (for CI). |
+| `npm run icons` | Regenerate `public/pwa-*.png` and `apple-touch-icon.png` from `public/icons/icon-source.svg`. |
 
 ---
 
@@ -525,24 +526,76 @@ Base layout is **mobile-first**: default gutters/padding target small screens; `
 
 ## PWA (manifest & service worker)
 
+**Goal (TSH-007):** make the app **installable** on phones and desktops — home-screen icon, standalone window, and offline-capable shell after the first visit.
+
+### Key files
+
+| File | Responsibility |
+|------|----------------|
+| `vite.config.js` | `VitePWA` plugin — manifest fields, Workbox precache + SPA fallback |
+| `public/icons/icon-source.svg` | Master icon art (teal + speech bubble); edit then run `npm run icons` |
+| `public/pwa-192.png`, `pwa-512.png`, `apple-touch-icon.png` | Generated install icons (committed so CI/build does not require Sharp) |
+| `scripts/generate-pwa-icons.mjs` | Renders SVG → PNG via **sharp** |
+| `src/lib/registerPwa.js` | Registers SW on boot; dev-only lifecycle logging |
+| `src/main.jsx` | Calls `registerPwa()` before React render |
+| `index.html` | `theme-color`, Apple web-app meta, `apple-touch-icon` link |
+
 ### What is configured
 
 | Piece | Where / how |
 |--------|-------------|
-| **Web App Manifest** | Generated at build time from `VitePWA({ manifest: { … } })` in `vite.config.js` (name, colors, `display: standalone`, icons, `start_url`, `scope`). |
-| **Icons** | `public/pwa-192.png`, `public/pwa-512.png` (placeholders; replace with branded maskable assets when polishing install UX). |
-| **Service worker** | **Workbox `generateSW`**: precache list built from `workbox.globPatterns` (JS, CSS, HTML, images, fonts). Output includes **`dist/sw.js`** and a **`dist/workbox-*.js`** helper. |
-| **Registration** | `src/main.jsx` calls **`registerSW({ immediate: true })`** from `virtual:pwa-register` so the app registers the SW in dev (when enabled) and production. |
-| **Types** | `src/vite-env.d.ts` references `vite-plugin-pwa/client` for editor/TS awareness of virtual modules. |
+| **Web App Manifest** | Emitted as **`dist/manifest.webmanifest`** from `vite.config.js` — `name`, `short_name`, `description`, `theme_color`, `background_color`, `display: standalone`, `start_url`, `scope`, `id`, `categories`, icon list with separate **`any`** and **`maskable`** purposes. |
+| **Icons** | **192** and **512** PNG for install prompts; **180** `apple-touch-icon.png` for iOS home screen. Regenerate after art changes: **`npm run icons`**. |
+| **Service worker** | Workbox **`generateSW`**: precaches hashed JS/CSS/HTML and static assets matching `globPatterns`. **`navigateFallback: 'index.html'`** serves the SPA shell for client routes when offline. **`cleanupOutdatedCaches: true`** drops old precache buckets after deploy. |
+| **Registration** | **`registerType: 'autoUpdate'`** — new builds activate on the next page load without a blocking update modal. |
+| **Types** | `src/vite-env.d.ts` references `vite-plugin-pwa/client` for `virtual:pwa-register`. |
+
+### Installability checklist
+
+Browsers require (simplified):
+
+1. **HTTPS** (or `localhost` for local testing).
+2. Valid **manifest** linked from HTML (Vite plugin injects `<link rel="manifest">` on build).
+3. **Icons** at least **192×192** and **512×512** returning HTTP 200.
+4. **Registered service worker** with a `fetch` handler (Workbox provides this).
+
+**Test locally:**
+
+```bash
+npm run build
+npm run preview
+```
+
+Open the preview URL → DevTools → **Application** → Manifest / Service Workers. On mobile Chrome: menu → **Install app** or **Add to Home screen**.
 
 ### Dev vs production
 
-- **`devOptions.enabled: true`** (in `vite.config.js`) turns on PWA-related behavior during `npm run dev` so you can iterate without only relying on `preview`.
-- A successful **`npm run build`** should end with a short **PWA** summary in the terminal (precache entry count and paths like `dist/sw.js`). Then use **`npm run preview`** to validate installation and offline behavior.
+- **`devOptions.enabled: true`** — SW + manifest behavior during `npm run dev` (type `module` for the dev SW). Check the console for `[PWA] Service worker registered`.
+- **Production** — run **`npm run build`** then **`npm run preview`** for the real `dist/sw.js` and precache list.
 
-### Register type
+### Service worker strategy (why precache + navigate fallback)
 
-**`registerType: 'autoUpdate'`** means when you ship a new build, the new service worker can take over without prompting the user each time (sensible default for content-style apps). You can switch to `'prompt'` later if you want explicit “new version” UX.
+| Strategy | What we use | Why |
+|----------|-------------|-----|
+| **Precache** | All built static assets | Lesson UI, CSS, and JS load instantly and work offline after first visit. |
+| **Navigate fallback** | `index.html` for document navigations | Single-page app: any “page” URL still boots React from cache when offline. |
+| **No runtime API cache** | — | Lesson data is static in `lessonConfig.js`; rewards use `localStorage` only. No CDN/API rules needed yet. |
+
+### Definitions
+
+| Term | Meaning |
+|------|---------|
+| **PWA** | Progressive Web App — a website that meets install + offline criteria and can behave like a native app. |
+| **Web App Manifest** | JSON file (`manifest.webmanifest`) describing name, icons, colors, and how the OS should launch the app (`standalone`, `start_url`, etc.). |
+| **Service worker (SW)** | A background script the browser runs separately from your page; can intercept network requests and cache assets. |
+| **Workbox** | Google’s library (used via **vite-plugin-pwa**) that generates a SW with precaching and routing recipes. |
+| **Precache** | Assets listed at build time and downloaded into cache when the SW installs. |
+| **`registerType: 'autoUpdate'`** | When you deploy a new build, the new SW installs in the background and takes over on the next navigation. |
+| **`display: standalone`** | Opens without the browser URL bar (feels like an installed app). |
+| **`scope` / `start_url`** | Which URLs belong to the PWA and which URL opens on launch (both `/` here). |
+| **`purpose: maskable`** | Icon safe zone for Android adaptive icons (cropped to circle/squircle). |
+| **`navigateFallback`** | Offline document requests fall back to cached `index.html` so the SPA still loads. |
+| **Install prompt** | Browser UI to “Install” or “Add to Home screen”; only appears when manifest + SW + engagement rules pass. |
 
 ---
 
@@ -565,7 +618,8 @@ Work is tracked by **task IDs** (`TSH-001` …) with suggested branch names and 
 | TSH-004 | Done | Cheer / encouragement copy, feedback animations, card enter & exit transitions |
 | TSH-005 | Done | Lesson progress bar, XP + streak on end screen, `localStorage` persistence |
 | TSH-006 | Done | Mobile-first shell, 44px tap targets, focus rings, skip link, reduced motion (CSS + JS) |
-| TSH-007 … TSH-009 | Planned | PWA polish, innovation, deploy |
+| TSH-007 | Done | Manifest, branded icons, Workbox precache + SPA offline fallback |
+| TSH-008 … TSH-009 | Planned | Innovation, deploy |
 
 That document is the source of truth for phases and git workflow. This README focuses on **how to run and extend the codebase**; the plan tracks **what to build next**.
 
